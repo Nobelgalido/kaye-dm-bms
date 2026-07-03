@@ -24,11 +24,6 @@ public class Order
 
     public bool IsCrewMeal { get; set; } = false;
 
-    // Set true only when the cashier explicitly confirmed selling past the
-    // day's computed availability (see AvailabilityCalculator). Never set by
-    // request input directly — OrderService derives it from the actual check.
-    public bool OversoldOverride { get; set; } = false;
-
     // Set by IOrderService.VoidOrderAsync. Blueprint §4 doesn't list a storage
     // column for this, but domain rule 4 ("voiding requires a reason") needs one.
     public string? VoidReason { get; set; }

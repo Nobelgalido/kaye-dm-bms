@@ -17,6 +17,7 @@ public class AppDbContext : IdentityDbContext<IdentityUser>
     public DbSet<BusCompany> BusCompanies => Set<BusCompany>();
     public DbSet<BusTrip> BusTrips => Set<BusTrip>();
     public DbSet<CrewMealCredit> CrewMealCredits => Set<CrewMealCredit>();
+    public DbSet<DishBatch> DishBatches => Set<DishBatch>();
 
     protected override void OnModelCreating(ModelBuilder builder)
     {
@@ -89,6 +90,16 @@ public class AppDbContext : IdentityDbContext<IdentityUser>
 
             // One credit per ₱0 crew-meal order — enforced at the DB level too.
             entity.HasIndex(c => c.OrderId).IsUnique();
+        });
+
+        builder.Entity<DishBatch>(entity =>
+        {
+            entity.Property(b => b.TraysProduced).HasPrecision(10, 2);
+
+            entity.HasOne(b => b.MenuItem)
+                .WithMany()
+                .HasForeignKey(b => b.MenuItemId)
+                .OnDelete(DeleteBehavior.Restrict);
         });
     }
 }
