@@ -1,5 +1,7 @@
+using KayeDM.Application.Buses;
 using KayeDM.Application.Menu;
 using KayeDM.Application.Orders;
+using KayeDM.Infrastructure.Buses;
 using KayeDM.Infrastructure.Data;
 using KayeDM.Infrastructure.Menu;
 using KayeDM.Infrastructure.Orders;
@@ -14,6 +16,7 @@ builder.Services.AddDbContextFactory<AppDbContext>(options =>
 
 builder.Services.AddScoped<IMenuItemService, MenuItemService>();
 builder.Services.AddScoped<IOrderService, OrderService>();
+builder.Services.AddScoped<IBusService, BusService>();
 
 builder.Services.AddRazorComponents()
     .AddInteractiveServerComponents();
