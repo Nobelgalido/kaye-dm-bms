@@ -19,9 +19,8 @@ public class Order
     public decimal AmountTendered { get; set; }
     public decimal ChangeGiven { get; set; }
 
-    // Nav property added in Task 3 (LinkOrderToBusTrip) — deferring it keeps the
-    // FK creation in its own migration instead of EF folding it into Task 1's.
     public int? BusTripId { get; set; }
+    public BusTrip? BusTrip { get; set; }
 
     public bool IsCrewMeal { get; set; } = false;
 
