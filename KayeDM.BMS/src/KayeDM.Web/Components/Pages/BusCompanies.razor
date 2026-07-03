@@ -1,0 +1,137 @@
+@page "/buses/companies"
+@using System.ComponentModel.DataAnnotations
+@using KayeDM.Application.Buses
+@inject IBusService BusService
+
+<PageTitle>Bus Companies</PageTitle>
+
+<h1>Bus Companies</h1>
+
+<button class="btn btn-primary mb-3" @onclick="StartCreate">+ Add Company</button>
+
+@if (_companies is null)
+{
+    <p>Loading…</p>
+}
+else if (_companies.Count == 0)
+{
+    <p>No bus companies yet.</p>
+}
+else
+{
+    <table class="table">
+        <thead>
+            <tr>
+                <th>Name</th>
+                <th>Contact Person</th>
+                <th>Meal Allowance / Trip</th>
+                <th>Status</th>
+                <th></th>
+            </tr>
+        </thead>
+        <tbody>
+            @foreach (var company in _companies)
+            {
+                <tr>
+                    <td>@company.Name</td>
+                    <td>@company.ContactPerson</td>
+                    <td>@company.CrewMealAllowancePerTrip</td>
+                    <td>@(company.IsActive ? "Active" : "Inactive")</td>
+                    <td>
+                        <button class="btn btn-sm btn-secondary" @onclick="() => StartEdit(company)">Edit</button>
+                        <button class="btn btn-sm btn-outline-danger" @onclick="() => ToggleActiveAsync(company)">
+                            @(company.IsActive ? "Deactivate" : "Activate")
+                        </button>
+                    </td>
+                </tr>
+            }
+        </tbody>
+    </table>
+}
+
+@if (_editing)
+{
+    <EditForm Model="_form" OnValidSubmit="SaveAsync">
+        <DataAnnotationsValidator />
+        <ValidationSummary />
+        <div class="mb-2">
+            <label>Name</label>
+            <InputText class="form-control" @bind-Value="_form.Name" />
+        </div>
+        <div class="mb-2">
+            <label>Contact Person</label>
+            <InputText class="form-control" @bind-Value="_form.ContactPerson" />
+        </div>
+        <div class="mb-2">
+            <label>Crew Meal Allowance per Trip</label>
+            <InputNumber class="form-control" @bind-Value="_form.CrewMealAllowancePerTrip" />
+        </div>
+        <button type="submit" class="btn btn-success">Save</button>
+        <button type="button" class="btn btn-link" @onclick="CancelEdit">Cancel</button>
+    </EditForm>
+}
+
+@code {
+    private List<BusCompanyDto>? _companies;
+    private bool _editing;
+    private int _editingId;
+    private EditModel _form = new();
+
+    protected override async Task OnInitializedAsync() => await LoadAsync();
+
+    private async Task LoadAsync() => _companies = await BusService.GetCompaniesAsync(includeInactive: true);
+
+    private void StartCreate()
+    {
+        _editingId = 0;
+        _form = new EditModel();
+        _editing = true;
+    }
+
+    private void StartEdit(BusCompanyDto company)
+    {
+        _editingId = company.Id;
+        _form = new EditModel
+        {
+            Name = company.Name,
+            ContactPerson = company.ContactPerson,
+            CrewMealAllowancePerTrip = company.CrewMealAllowancePerTrip
+        };
+        _editing = true;
+    }
+
+    private void CancelEdit() => _editing = false;
+
+    private async Task SaveAsync()
+    {
+        var dto = new BusCompanyUpsertDto(_form.Name, _form.ContactPerson, _form.CrewMealAllowancePerTrip);
+        if (_editingId > 0)
+        {
+            await BusService.UpdateCompanyAsync(_editingId, dto);
+        }
+        else
+        {
+            await BusService.CreateCompanyAsync(dto);
+        }
+
+        _editing = false;
+        await LoadAsync();
+    }
+
+    private async Task ToggleActiveAsync(BusCompanyDto company)
+    {
+        await BusService.SetCompanyActiveAsync(company.Id, !company.IsActive);
+        await LoadAsync();
+    }
+
+    private class EditModel
+    {
+        [Required]
+        public string Name { get; set; } = "";
+
+        public string? ContactPerson { get; set; }
+
+        [Range(0, 20)]
+        public int CrewMealAllowancePerTrip { get; set; } = 2;
+    }
+}
