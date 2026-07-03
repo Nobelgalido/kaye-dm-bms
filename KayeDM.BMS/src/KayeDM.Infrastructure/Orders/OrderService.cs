@@ -36,7 +36,8 @@ public class OrderService : IOrderService
             CreatedAt = DateTime.Now,
             CashierId = request.CashierId,
             Status = OrderStatus.Completed,
-            PaymentMethod = request.PaymentMethod
+            PaymentMethod = request.PaymentMethod,
+            BusTripId = request.BusTripId
         };
 
         decimal total = 0m;
@@ -91,6 +92,86 @@ public class OrderService : IOrderService
         await db.SaveChangesAsync();
 
         return new OrderResult(order.Id, order.OrderNumber, order.CreatedAt, total, order.AmountTendered, order.ChangeGiven, lineResults);
+    }
+
+    public async Task<OrderResult> CreateCrewMealOrderAsync(CreateCrewMealOrderRequest request)
+    {
+        await using var db = await _dbContextFactory.CreateDbContextAsync();
+
+        if (request.Lines is null || request.Lines.Count == 0)
+        {
+            throw new DomainException("A crew meal order must have at least one line.");
+        }
+
+        var trip = await db.BusTrips.Include(t => t.BusCompany).FirstOrDefaultAsync(t => t.Id == request.BusTripId)
+            ?? throw new DomainException($"Bus trip {request.BusTripId} not found.");
+
+        var creditsUsed = await db.CrewMealCredits.CountAsync(c => c.BusTripId == request.BusTripId);
+        if (creditsUsed >= trip.BusCompany.CrewMealAllowancePerTrip)
+        {
+            throw new DomainException(
+                $"Crew meal allowance exceeded for this trip ({creditsUsed} of {trip.BusCompany.CrewMealAllowancePerTrip} used).");
+        }
+
+        var menuItemIds = request.Lines.Select(l => l.MenuItemId).Distinct().ToList();
+        var menuItems = await db.MenuItems
+            .Where(m => menuItemIds.Contains(m.Id))
+            .ToDictionaryAsync(m => m.Id);
+
+        var order = new Order
+        {
+            OrderNumber = await NextOrderNumberAsync(db),
+            CreatedAt = DateTime.Now,
+            CashierId = request.CashierId,
+            Status = OrderStatus.Completed,
+            PaymentMethod = PaymentMethod.Cash,
+            BusTripId = request.BusTripId,
+            IsCrewMeal = true,
+            AmountTendered = 0m,
+            ChangeGiven = 0m
+        };
+
+        var lineResults = new List<OrderLineResult>();
+
+        foreach (var lineRequest in request.Lines)
+        {
+            if (!menuItems.TryGetValue(lineRequest.MenuItemId, out var menuItem))
+            {
+                throw new DomainException($"Menu item {lineRequest.MenuItemId} not found.");
+            }
+
+            if (lineRequest.Quantity <= 0)
+            {
+                throw new DomainException("Line quantity must be positive.");
+            }
+
+            // Crew meals are free — the line is recorded for stock/traceability but
+            // priced at zero so the order total is always ₱0.
+            order.Lines.Add(new OrderLine
+            {
+                MenuItemId = menuItem.Id,
+                Quantity = lineRequest.Quantity,
+                UnitPriceAtSale = 0m
+            });
+
+            lineResults.Add(new OrderLineResult(menuItem.Id, menuItem.Name, lineRequest.Quantity, 0m, 0m));
+        }
+
+        // Order and credit are added to the same context and saved once: EF fixes up
+        // CrewMealCredit.OrderId from Order.Id during this single SaveChangesAsync,
+        // making the two inserts atomic.
+        db.Orders.Add(order);
+        db.CrewMealCredits.Add(new CrewMealCredit
+        {
+            BusTripId = request.BusTripId,
+            CrewRole = request.CrewRole,
+            Order = order,
+            LoggedAt = DateTime.Now
+        });
+
+        await db.SaveChangesAsync();
+
+        return new OrderResult(order.Id, order.OrderNumber, order.CreatedAt, 0m, 0m, 0m, lineResults);
     }
 
     public async Task VoidOrderAsync(int orderId, string reason)

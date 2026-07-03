@@ -143,4 +143,19 @@ public class OrderServiceTests : IDisposable
 
         await act.Should().ThrowAsync<DomainException>();
     }
+
+    [Fact]
+    public async Task CreateOrderAsync_SetsBusTripId_WhenProvided()
+    {
+        _db.BusCompanies.Add(new BusCompany { Id = 1, Name = "DLTB", CrewMealAllowancePerTrip = 2, IsActive = true });
+        _db.BusTrips.Add(new BusTrip { Id = 1, BusCompanyId = 1, BusNumber = "8112", Route = "Manila-Sorsogon", ArrivedAt = DateTime.Now });
+        _db.SaveChanges();
+
+        var request = new CreateOrderRequest(new[] { new OrderLineRequest(1, 1) }, PaymentMethod.Cash, 100m, null, BusTripId: 1);
+
+        var result = await _sut.CreateOrderAsync(request);
+
+        var order = await _db.Orders.FindAsync(result.Id);
+        order!.BusTripId.Should().Be(1);
+    }
 }
