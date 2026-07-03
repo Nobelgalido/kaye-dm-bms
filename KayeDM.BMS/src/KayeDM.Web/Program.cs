@@ -1,6 +1,8 @@
 using KayeDM.Application.Menu;
+using KayeDM.Application.Orders;
 using KayeDM.Infrastructure.Data;
 using KayeDM.Infrastructure.Menu;
+using KayeDM.Infrastructure.Orders;
 using KayeDM.Web.Components;
 using Microsoft.EntityFrameworkCore;
 
@@ -11,6 +13,7 @@ builder.Services.AddDbContext<AppDbContext>(options =>
     options.UseSqlServer(builder.Configuration.GetConnectionString("KayeDmBms")));
 
 builder.Services.AddScoped<IMenuItemService, MenuItemService>();
+builder.Services.AddScoped<IOrderService, OrderService>();
 
 builder.Services.AddRazorComponents()
     .AddInteractiveServerComponents();
