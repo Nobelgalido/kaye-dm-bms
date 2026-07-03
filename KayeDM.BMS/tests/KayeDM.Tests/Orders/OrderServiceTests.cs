@@ -27,7 +27,7 @@ public class OrderServiceTests : IDisposable
 
         _db = new AppDbContext(options);
         _db.Database.EnsureCreated();
-        _sut = new OrderService(_db);
+        _sut = new OrderService(new TestDbContextFactory(options));
 
         _db.MenuItems.AddRange(
             new MenuItem { Id = 1, Name = "Adobo", Category = MenuCategory.Ulam, Price = 90m, IsActive = true, SortOrder = 1 },
@@ -39,6 +39,28 @@ public class OrderServiceTests : IDisposable
     {
         _db.Dispose();
         _connection.Dispose();
+    }
+
+    /// <summary>
+    /// Test-only <see cref="IDbContextFactory{AppDbContext}"/> that wraps the same
+    /// <see cref="DbContextOptions{AppDbContext}"/> (and therefore the same open SQLite
+    /// in-memory connection) used to seed data in the test constructor, so every
+    /// context created by <see cref="OrderService"/> during a test sees the same schema
+    /// and data.
+    /// </summary>
+    private sealed class TestDbContextFactory : IDbContextFactory<AppDbContext>
+    {
+        private readonly DbContextOptions<AppDbContext> _options;
+
+        public TestDbContextFactory(DbContextOptions<AppDbContext> options)
+        {
+            _options = options;
+        }
+
+        public AppDbContext CreateDbContext() => new(_options);
+
+        public Task<AppDbContext> CreateDbContextAsync(CancellationToken cancellationToken = default)
+            => Task.FromResult(new AppDbContext(_options));
     }
 
     [Fact]

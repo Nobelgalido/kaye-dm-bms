@@ -8,16 +8,18 @@ namespace KayeDM.Infrastructure.Menu;
 
 public class MenuItemService : IMenuItemService
 {
-    private readonly AppDbContext _db;
+    private readonly IDbContextFactory<AppDbContext> _dbContextFactory;
 
-    public MenuItemService(AppDbContext db)
+    public MenuItemService(IDbContextFactory<AppDbContext> dbContextFactory)
     {
-        _db = db;
+        _dbContextFactory = dbContextFactory;
     }
 
     public async Task<List<MenuItemDto>> GetAllAsync(bool includeInactive = false)
     {
-        var query = _db.MenuItems.AsNoTracking().AsQueryable();
+        await using var db = await _dbContextFactory.CreateDbContextAsync();
+
+        var query = db.MenuItems.AsNoTracking().AsQueryable();
         if (!includeInactive)
         {
             query = query.Where(m => m.IsActive);
@@ -31,7 +33,9 @@ public class MenuItemService : IMenuItemService
 
     public async Task<MenuItemDto?> GetByIdAsync(int id)
     {
-        var menuItem = await _db.MenuItems.AsNoTracking().FirstOrDefaultAsync(m => m.Id == id);
+        await using var db = await _dbContextFactory.CreateDbContextAsync();
+
+        var menuItem = await db.MenuItems.AsNoTracking().FirstOrDefaultAsync(m => m.Id == id);
         return menuItem is null
             ? null
             : new MenuItemDto(menuItem.Id, menuItem.Name, menuItem.Category, menuItem.Price, menuItem.IsActive, menuItem.SortOrder);
@@ -39,6 +43,8 @@ public class MenuItemService : IMenuItemService
 
     public async Task<MenuItemDto> CreateAsync(MenuItemUpsertDto dto)
     {
+        await using var db = await _dbContextFactory.CreateDbContextAsync();
+
         var entity = new MenuItem
         {
             Name = dto.Name,
@@ -48,15 +54,17 @@ public class MenuItemService : IMenuItemService
             IsActive = true
         };
 
-        _db.MenuItems.Add(entity);
-        await _db.SaveChangesAsync();
+        db.MenuItems.Add(entity);
+        await db.SaveChangesAsync();
 
         return new MenuItemDto(entity.Id, entity.Name, entity.Category, entity.Price, entity.IsActive, entity.SortOrder);
     }
 
     public async Task<MenuItemDto> UpdateAsync(int id, MenuItemUpsertDto dto)
     {
-        var entity = await _db.MenuItems.FirstOrDefaultAsync(m => m.Id == id)
+        await using var db = await _dbContextFactory.CreateDbContextAsync();
+
+        var entity = await db.MenuItems.FirstOrDefaultAsync(m => m.Id == id)
             ?? throw new DomainException($"Menu item {id} not found.");
 
         entity.Name = dto.Name;
@@ -64,17 +72,19 @@ public class MenuItemService : IMenuItemService
         entity.Price = dto.Price;
         entity.SortOrder = dto.SortOrder;
 
-        await _db.SaveChangesAsync();
+        await db.SaveChangesAsync();
 
         return new MenuItemDto(entity.Id, entity.Name, entity.Category, entity.Price, entity.IsActive, entity.SortOrder);
     }
 
     public async Task SetActiveAsync(int id, bool isActive)
     {
-        var entity = await _db.MenuItems.FirstOrDefaultAsync(m => m.Id == id)
+        await using var db = await _dbContextFactory.CreateDbContextAsync();
+
+        var entity = await db.MenuItems.FirstOrDefaultAsync(m => m.Id == id)
             ?? throw new DomainException($"Menu item {id} not found.");
 
         entity.IsActive = isActive;
-        await _db.SaveChangesAsync();
+        await db.SaveChangesAsync();
     }
 }

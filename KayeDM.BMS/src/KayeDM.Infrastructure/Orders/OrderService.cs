@@ -9,28 +9,30 @@ namespace KayeDM.Infrastructure.Orders;
 
 public class OrderService : IOrderService
 {
-    private readonly AppDbContext _db;
+    private readonly IDbContextFactory<AppDbContext> _dbContextFactory;
 
-    public OrderService(AppDbContext db)
+    public OrderService(IDbContextFactory<AppDbContext> dbContextFactory)
     {
-        _db = db;
+        _dbContextFactory = dbContextFactory;
     }
 
     public async Task<OrderResult> CreateOrderAsync(CreateOrderRequest request)
     {
+        await using var db = await _dbContextFactory.CreateDbContextAsync();
+
         if (request.Lines is null || request.Lines.Count == 0)
         {
             throw new DomainException("An order must have at least one line.");
         }
 
         var menuItemIds = request.Lines.Select(l => l.MenuItemId).Distinct().ToList();
-        var menuItems = await _db.MenuItems
+        var menuItems = await db.MenuItems
             .Where(m => menuItemIds.Contains(m.Id))
             .ToDictionaryAsync(m => m.Id);
 
         var order = new Order
         {
-            OrderNumber = await NextOrderNumberAsync(),
+            OrderNumber = await NextOrderNumberAsync(db),
             CreatedAt = DateTime.Now,
             CashierId = request.CashierId,
             Status = OrderStatus.Completed,
@@ -66,29 +68,41 @@ public class OrderService : IOrderService
             lineResults.Add(new OrderLineResult(menuItem.Id, menuItem.Name, lineRequest.Quantity, unitPrice, lineTotal));
         }
 
-        if (request.AmountTendered < total)
+        if (request.PaymentMethod == PaymentMethod.GCash)
         {
-            throw new DomainException(
-                $"Amount tendered ({request.AmountTendered:N2}) is less than the order total ({total:N2}).");
+            // Digital payment: there is no "tendered cash" or "change." The server is
+            // authoritative here and ignores whatever tendered amount the client sent.
+            order.AmountTendered = total;
+            order.ChangeGiven = 0m;
+        }
+        else
+        {
+            if (request.AmountTendered < total)
+            {
+                throw new DomainException(
+                    $"Amount tendered ({request.AmountTendered:N2}) is less than the order total ({total:N2}).");
+            }
+
+            order.AmountTendered = request.AmountTendered;
+            order.ChangeGiven = request.AmountTendered - total;
         }
 
-        order.AmountTendered = request.AmountTendered;
-        order.ChangeGiven = request.AmountTendered - total;
-
-        _db.Orders.Add(order);
-        await _db.SaveChangesAsync();
+        db.Orders.Add(order);
+        await db.SaveChangesAsync();
 
         return new OrderResult(order.Id, order.OrderNumber, order.CreatedAt, total, order.AmountTendered, order.ChangeGiven, lineResults);
     }
 
     public async Task VoidOrderAsync(int orderId, string reason)
     {
+        await using var db = await _dbContextFactory.CreateDbContextAsync();
+
         if (string.IsNullOrWhiteSpace(reason))
         {
             throw new DomainException("A void reason is required.");
         }
 
-        var order = await _db.Orders.FirstOrDefaultAsync(o => o.Id == orderId)
+        var order = await db.Orders.FirstOrDefaultAsync(o => o.Id == orderId)
             ?? throw new DomainException($"Order {orderId} not found.");
 
         if (order.Status == OrderStatus.Voided)
@@ -98,13 +112,13 @@ public class OrderService : IOrderService
 
         order.Status = OrderStatus.Voided;
         order.VoidReason = reason;
-        await _db.SaveChangesAsync();
+        await db.SaveChangesAsync();
     }
 
-    private async Task<string> NextOrderNumberAsync()
+    private static async Task<string> NextOrderNumberAsync(AppDbContext db)
     {
         var today = DateTime.Now.Date;
-        var countToday = await _db.Orders.CountAsync(o => o.CreatedAt >= today && o.CreatedAt < today.AddDays(1));
+        var countToday = await db.Orders.CountAsync(o => o.CreatedAt >= today && o.CreatedAt < today.AddDays(1));
         return $"{today:yyyyMMdd}-{countToday + 1:D3}";
     }
 }

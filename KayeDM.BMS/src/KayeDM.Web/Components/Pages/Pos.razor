@@ -60,17 +60,24 @@
             <button class="btn @(_paymentMethod == PaymentMethod.GCash ? "btn-primary" : "btn-outline-primary")"
                     @onclick="() => _paymentMethod = PaymentMethod.GCash">GCash</button>
         </div>
-        <div class="quick-amounts">
-            @foreach (var amount in new decimal[] { 100, 200, 500, 1000 })
-            {
-                <button class="btn btn-outline-secondary" @onclick="() => Tendered = amount">@FormatPeso(amount)</button>
-            }
-        </div>
-        <div>
-            <label>Tendered</label>
-            <input type="number" class="form-control" @bind="Tendered" step="0.01" />
-        </div>
-        <div>Change: @FormatPeso(Change)</div>
+        @if (_paymentMethod == PaymentMethod.Cash)
+        {
+            <div class="quick-amounts">
+                @foreach (var amount in new decimal[] { 100, 200, 500, 1000 })
+                {
+                    <button class="btn btn-outline-secondary" @onclick="() => Tendered = amount">@FormatPeso(amount)</button>
+                }
+            </div>
+            <div>
+                <label>Tendered</label>
+                <input type="number" class="form-control" @bind="Tendered" step="0.01" />
+            </div>
+            <div>Change: @FormatPeso(Change)</div>
+        }
+        else
+        {
+            <div>Total to pay via GCash: @FormatPeso(Total)</div>
+        }
         <button class="btn btn-success btn-lg" disabled="@(!CanComplete)" @onclick="CompleteAsync">Complete</button>
         <button class="btn btn-link" @onclick="ClearTicket">Clear</button>
 
@@ -97,7 +104,7 @@
 
     private decimal Total => _ticket.Sum(l => l.MenuItem.Price * l.Quantity);
     private decimal Change => Tendered - Total;
-    private bool CanComplete => _ticket.Count > 0 && Tendered >= Total;
+    private bool CanComplete => _ticket.Count > 0 && (_paymentMethod == PaymentMethod.GCash || Tendered >= Total);
 
     protected override async Task OnInitializedAsync()
     {
@@ -158,6 +165,10 @@
         catch (DomainException ex)
         {
             _error = ex.Message;
+        }
+        catch (Exception)
+        {
+            _error = "Something went wrong completing this order. Please try again.";
         }
     }
 
