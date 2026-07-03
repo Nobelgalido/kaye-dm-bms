@@ -20,4 +20,10 @@
     <Using Include="Xunit" />
   </ItemGroup>
 
+  <ItemGroup>
+    <ProjectReference Include="..\..\src\KayeDM.Domain\KayeDM.Domain.csproj" />
+    <ProjectReference Include="..\..\src\KayeDM.Application\KayeDM.Application.csproj" />
+    <ProjectReference Include="..\..\src\KayeDM.Infrastructure\KayeDM.Infrastructure.csproj" />
+  </ItemGroup>
+
 </Project>

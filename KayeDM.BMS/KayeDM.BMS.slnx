@@ -1,3 +1,7 @@
 <Solution>
-  <Project Path="KayeDM.Web/KayeDM.Web.csproj" />
+  <Project Path="src/KayeDM.Domain/KayeDM.Domain.csproj" />
+  <Project Path="src/KayeDM.Application/KayeDM.Application.csproj" />
+  <Project Path="src/KayeDM.Infrastructure/KayeDM.Infrastructure.csproj" />
+  <Project Path="src/KayeDM.Web/KayeDM.Web.csproj" />
+  <Project Path="tests/KayeDM.Tests/KayeDM.Tests.csproj" />
 </Solution>
