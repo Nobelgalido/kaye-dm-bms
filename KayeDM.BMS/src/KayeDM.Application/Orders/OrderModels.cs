@@ -1,0 +1,22 @@
+using KayeDM.Domain.Enums;
+
+namespace KayeDM.Application.Orders;
+
+public record OrderLineRequest(int MenuItemId, int Quantity);
+
+public record CreateOrderRequest(
+    IReadOnlyList<OrderLineRequest> Lines,
+    PaymentMethod PaymentMethod,
+    decimal AmountTendered,
+    string? CashierId);
+
+public record OrderLineResult(int MenuItemId, string MenuItemName, int Quantity, decimal UnitPriceAtSale, decimal LineTotal);
+
+public record OrderResult(
+    int Id,
+    string OrderNumber,
+    DateTime CreatedAt,
+    decimal Total,
+    decimal AmountTendered,
+    decimal ChangeGiven,
+    IReadOnlyList<OrderLineResult> Lines);
