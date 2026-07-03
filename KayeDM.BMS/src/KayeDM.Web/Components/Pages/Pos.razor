@@ -1,10 +1,12 @@
 @page "/pos"
+@using KayeDM.Application.Buses
 @using KayeDM.Application.Menu
 @using KayeDM.Application.Orders
 @using KayeDM.Domain.Enums
 @using KayeDM.Domain.Exceptions
 @inject IMenuItemService MenuItemService
 @inject IOrderService OrderService
+@inject IBusService BusService
 
 <PageTitle>POS</PageTitle>
 
@@ -54,29 +56,65 @@
     </div>
 
     <div class="pos-payment">
-        <div>
-            <button class="btn @(_paymentMethod == PaymentMethod.Cash ? "btn-primary" : "btn-outline-primary")"
-                    @onclick="() => _paymentMethod = PaymentMethod.Cash">Cash</button>
-            <button class="btn @(_paymentMethod == PaymentMethod.GCash ? "btn-primary" : "btn-outline-primary")"
-                    @onclick="() => _paymentMethod = PaymentMethod.GCash">GCash</button>
-        </div>
-        @if (_paymentMethod == PaymentMethod.Cash)
-        {
-            <div class="quick-amounts">
-                @foreach (var amount in new decimal[] { 100, 200, 500, 1000 })
+        <div class="pos-bus-assignment">
+            <label>Assign to bus (optional)</label>
+            <select class="form-control" @bind="_selectedBusTripId">
+                <option value="">-- none --</option>
+                @foreach (var trip in _recentTrips)
                 {
-                    <button class="btn btn-outline-secondary" @onclick="() => Tendered = amount">@FormatPeso(amount)</button>
+                    <option value="@trip.Id">@trip.BusCompanyName · @trip.BusNumber</option>
                 }
+            </select>
+            <button type="button" class="btn btn-sm btn-outline-secondary" @onclick="RefreshTripsAsync">Refresh</button>
+
+            <div class="form-check mt-2">
+                <input class="form-check-input" type="checkbox" id="crewMealMode" @bind="_isCrewMealMode" />
+                <label class="form-check-label" for="crewMealMode">Crew Meal Mode (free meal for bus crew)</label>
             </div>
-            <div>
-                <label>Tendered</label>
-                <input type="number" class="form-control" @bind="Tendered" step="0.01" />
-            </div>
-            <div>Change: @FormatPeso(Change)</div>
+
+            @if (_isCrewMealMode)
+            {
+                <div class="crew-role-toggle">
+                    <label>Crew Role</label>
+                    @foreach (var role in Enum.GetValues<CrewRole>())
+                    {
+                        <button type="button" class="btn @(role == _crewRole ? "btn-primary" : "btn-outline-primary")"
+                                @onclick="() => _crewRole = role">@role</button>
+                    }
+                </div>
+            }
+        </div>
+
+        @if (_isCrewMealMode)
+        {
+            <div>Crew meal — total: @FormatPeso(0m) (free)</div>
         }
         else
         {
-            <div>Total to pay via GCash: @FormatPeso(Total)</div>
+            <div>
+                <button class="btn @(_paymentMethod == PaymentMethod.Cash ? "btn-primary" : "btn-outline-primary")"
+                        @onclick="() => _paymentMethod = PaymentMethod.Cash">Cash</button>
+                <button class="btn @(_paymentMethod == PaymentMethod.GCash ? "btn-primary" : "btn-outline-primary")"
+                        @onclick="() => _paymentMethod = PaymentMethod.GCash">GCash</button>
+            </div>
+            @if (_paymentMethod == PaymentMethod.Cash)
+            {
+                <div class="quick-amounts">
+                    @foreach (var amount in new decimal[] { 100, 200, 500, 1000 })
+                    {
+                        <button class="btn btn-outline-secondary" @onclick="() => Tendered = amount">@FormatPeso(amount)</button>
+                    }
+                </div>
+                <div>
+                    <label>Tendered</label>
+                    <input type="number" class="form-control" @bind="Tendered" step="0.01" />
+                </div>
+                <div>Change: @FormatPeso(Change)</div>
+            }
+            else
+            {
+                <div>Total to pay via GCash: @FormatPeso(Total)</div>
+            }
         }
         <button class="btn btn-success btn-lg" disabled="@(!CanComplete)" @onclick="CompleteAsync">Complete</button>
         <button class="btn btn-link" @onclick="ClearTicket">Clear</button>
@@ -102,13 +140,28 @@
     private decimal _lastChange;
     private string? _error;
 
+    private List<BusTripDto> _recentTrips = new();
+    private int? _selectedBusTripId;
+    private bool _isCrewMealMode;
+    private CrewRole _crewRole = CrewRole.Driver;
+
     private decimal Total => _ticket.Sum(l => l.MenuItem.Price * l.Quantity);
     private decimal Change => Tendered - Total;
-    private bool CanComplete => _ticket.Count > 0 && (_paymentMethod == PaymentMethod.GCash || Tendered >= Total);
+
+    private bool CanComplete => _ticket.Count > 0 &&
+        (_isCrewMealMode
+            ? _selectedBusTripId is not null
+            : (_paymentMethod == PaymentMethod.GCash || Tendered >= Total));
 
     protected override async Task OnInitializedAsync()
     {
         _menuItems = await MenuItemService.GetAllAsync();
+        await RefreshTripsAsync();
+    }
+
+    private async Task RefreshTripsAsync()
+    {
+        _recentTrips = await BusService.GetRecentArrivalsAsync(TimeSpan.FromMinutes(45));
     }
 
     private void AddLine(MenuItemDto item)
@@ -141,6 +194,8 @@
         Tendered = 0;
         _lastOrderNumber = null;
         _error = null;
+        _isCrewMealMode = false;
+        _selectedBusTripId = null;
     }
 
     private static string FormatPeso(decimal amount) => string.Format("₱{0:N2}", amount);
@@ -150,17 +205,42 @@
         _error = null;
         try
         {
-            var request = new CreateOrderRequest(
-                _ticket.Select(l => new OrderLineRequest(l.MenuItem.Id, l.Quantity)).ToList(),
-                _paymentMethod,
-                Tendered,
-                CashierId: null);
+            OrderResult result;
+            if (_isCrewMealMode)
+            {
+                if (_selectedBusTripId is null)
+                {
+                    _error = "Select a bus trip for the crew meal.";
+                    return;
+                }
 
-            var result = await OrderService.CreateOrderAsync(request);
+                var crewRequest = new CreateCrewMealOrderRequest(
+                    _ticket.Select(l => new OrderLineRequest(l.MenuItem.Id, l.Quantity)).ToList(),
+                    _selectedBusTripId.Value,
+                    _crewRole,
+                    CashierId: null);
+
+                result = await OrderService.CreateCrewMealOrderAsync(crewRequest);
+            }
+            else
+            {
+                var request = new CreateOrderRequest(
+                    _ticket.Select(l => new OrderLineRequest(l.MenuItem.Id, l.Quantity)).ToList(),
+                    _paymentMethod,
+                    Tendered,
+                    CashierId: null,
+                    BusTripId: _selectedBusTripId);
+
+                result = await OrderService.CreateOrderAsync(request);
+            }
+
             _lastOrderNumber = result.OrderNumber;
             _lastChange = result.ChangeGiven;
             _ticket.Clear();
             Tendered = 0;
+            _isCrewMealMode = false;
+            _selectedBusTripId = null;
+            await RefreshTripsAsync();
         }
         catch (DomainException ex)
         {
