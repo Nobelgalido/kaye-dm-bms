@@ -109,4 +109,55 @@ public class BusServiceTests : IDisposable
 
         remaining.Should().Be(2);
     }
+
+    [Fact]
+    public async Task GetMonthlyReportAsync_TotalsMatchRawCreditCounts_ForATrip()
+    {
+        var now = DateTime.Now;
+        _db.BusTrips.Add(new BusTrip { Id = 1, BusCompanyId = 1, BusNumber = "8112", Route = "Manila-Sorsogon", ArrivedAt = now });
+        _db.SaveChanges();
+
+        var roles = new[]
+        {
+            CrewRole.Driver, CrewRole.Driver,
+            CrewRole.Conductor,
+            CrewRole.Assistant, CrewRole.Assistant, CrewRole.Assistant
+        };
+
+        foreach (var role in roles)
+        {
+            var order = new Order
+            {
+                OrderNumber = Guid.NewGuid().ToString("N"),
+                CreatedAt = now,
+                Status = OrderStatus.Completed,
+                PaymentMethod = PaymentMethod.Cash,
+                IsCrewMeal = true,
+                BusTripId = 1
+            };
+            _db.Orders.Add(order);
+            _db.SaveChanges();
+
+            _db.CrewMealCredits.Add(new CrewMealCredit { BusTripId = 1, CrewRole = role, Order = order, LoggedAt = now });
+            _db.SaveChanges();
+        }
+
+        var rawCredits = await _db.CrewMealCredits.Where(c => c.BusTripId == 1).ToListAsync();
+        var expectedDriver = rawCredits.Count(c => c.CrewRole == CrewRole.Driver);
+        var expectedConductor = rawCredits.Count(c => c.CrewRole == CrewRole.Conductor);
+        var expectedAssistant = rawCredits.Count(c => c.CrewRole == CrewRole.Assistant);
+
+        var report = await _sut.GetMonthlyReportAsync(1, now.Year, now.Month);
+
+        var row = report.Trips.Should().ContainSingle().Subject;
+        row.DriverCredits.Should().Be(expectedDriver);
+        row.ConductorCredits.Should().Be(expectedConductor);
+        row.AssistantCredits.Should().Be(expectedAssistant);
+        row.TotalCredits.Should().Be(rawCredits.Count);
+
+        report.DriverMealsTotal.Should().Be(expectedDriver);
+        report.ConductorMealsTotal.Should().Be(expectedConductor);
+        report.AssistantMealsTotal.Should().Be(expectedAssistant);
+        report.TotalMeals.Should().Be(rawCredits.Count);
+    }
 }
