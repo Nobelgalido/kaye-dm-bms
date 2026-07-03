@@ -1,0 +1,148 @@
+@page "/menu"
+@using System.ComponentModel.DataAnnotations
+@using KayeDM.Application.Menu
+@using KayeDM.Domain.Enums
+@inject IMenuItemService MenuItemService
+
+<PageTitle>Menu</PageTitle>
+
+<h1>Menu Items</h1>
+
+<button class="btn btn-primary mb-3" @onclick="StartCreate">+ Add Item</button>
+
+@if (_items is null)
+{
+    <p>Loading…</p>
+}
+else if (_items.Count == 0)
+{
+    <p>No menu items yet.</p>
+}
+else
+{
+    <table class="table">
+        <thead>
+            <tr>
+                <th>Name</th>
+                <th>Category</th>
+                <th>Price</th>
+                <th>Sort</th>
+                <th>Status</th>
+                <th></th>
+            </tr>
+        </thead>
+        <tbody>
+            @foreach (var item in _items)
+            {
+                <tr>
+                    <td>@item.Name</td>
+                    <td>@item.Category</td>
+                    <td>@FormatPeso(item.Price)</td>
+                    <td>@item.SortOrder</td>
+                    <td>@(item.IsActive ? "Active" : "Inactive")</td>
+                    <td>
+                        <button class="btn btn-sm btn-secondary" @onclick="() => StartEdit(item)">Edit</button>
+                        <button class="btn btn-sm btn-outline-danger" @onclick="() => ToggleActiveAsync(item)">
+                            @(item.IsActive ? "Deactivate" : "Activate")
+                        </button>
+                    </td>
+                </tr>
+            }
+        </tbody>
+    </table>
+}
+
+@if (_editing)
+{
+    <EditForm Model="_form" OnValidSubmit="SaveAsync">
+        <DataAnnotationsValidator />
+        <ValidationSummary />
+        <div class="mb-2">
+            <label>Name</label>
+            <InputText class="form-control" @bind-Value="_form.Name" />
+        </div>
+        <div class="mb-2">
+            <label>Category</label>
+            <InputSelect class="form-control" @bind-Value="_form.Category">
+                @foreach (var category in Enum.GetValues<MenuCategory>())
+                {
+                    <option value="@category">@category</option>
+                }
+            </InputSelect>
+        </div>
+        <div class="mb-2">
+            <label>Price</label>
+            <InputNumber class="form-control" @bind-Value="_form.Price" />
+        </div>
+        <div class="mb-2">
+            <label>Sort Order</label>
+            <InputNumber class="form-control" @bind-Value="_form.SortOrder" />
+        </div>
+        <button type="submit" class="btn btn-success">Save</button>
+        <button type="button" class="btn btn-link" @onclick="CancelEdit">Cancel</button>
+    </EditForm>
+}
+
+@code {
+    private List<MenuItemDto>? _items;
+    private bool _editing;
+    private int _editingId;
+    private EditModel _form = new();
+
+    protected override async Task OnInitializedAsync() => await LoadAsync();
+
+    private async Task LoadAsync() => _items = await MenuItemService.GetAllAsync(includeInactive: true);
+
+    private void StartCreate()
+    {
+        _editingId = 0;
+        _form = new EditModel();
+        _editing = true;
+    }
+
+    private void StartEdit(MenuItemDto item)
+    {
+        _editingId = item.Id;
+        _form = new EditModel { Name = item.Name, Category = item.Category, Price = item.Price, SortOrder = item.SortOrder };
+        _editing = true;
+    }
+
+    private void CancelEdit() => _editing = false;
+
+    private async Task SaveAsync()
+    {
+        var dto = new MenuItemUpsertDto(_form.Name, _form.Category, _form.Price, _form.SortOrder);
+        if (_editingId > 0)
+        {
+            await MenuItemService.UpdateAsync(_editingId, dto);
+        }
+        else
+        {
+            await MenuItemService.CreateAsync(dto);
+        }
+
+        _editing = false;
+        await LoadAsync();
+    }
+
+    private async Task ToggleActiveAsync(MenuItemDto item)
+    {
+        await MenuItemService.SetActiveAsync(item.Id, !item.IsActive);
+        await LoadAsync();
+    }
+
+    private static string FormatPeso(decimal amount) => string.Format("₱{0:N2}", amount);
+
+    private class EditModel
+    {
+        [Required]
+        public string Name { get; set; } = "";
+
+        public MenuCategory Category { get; set; } = MenuCategory.Ulam;
+
+        [Range(0.01, 100000)]
+        public decimal Price { get; set; }
+
+        public int SortOrder { get; set; }
+    }
+}
