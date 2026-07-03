@@ -18,6 +18,7 @@ public class AppDbContext : IdentityDbContext<IdentityUser>
     public DbSet<BusTrip> BusTrips => Set<BusTrip>();
     public DbSet<CrewMealCredit> CrewMealCredits => Set<CrewMealCredit>();
     public DbSet<DishBatch> DishBatches => Set<DishBatch>();
+    public DbSet<WasteLog> WasteLogs => Set<WasteLog>();
 
     protected override void OnModelCreating(ModelBuilder builder)
     {
@@ -99,6 +100,17 @@ public class AppDbContext : IdentityDbContext<IdentityUser>
             entity.HasOne(b => b.MenuItem)
                 .WithMany()
                 .HasForeignKey(b => b.MenuItemId)
+                .OnDelete(DeleteBehavior.Restrict);
+        });
+
+        builder.Entity<WasteLog>(entity =>
+        {
+            entity.Property(w => w.TraysWasted).HasPrecision(10, 2);
+            entity.Property(w => w.LoggedById).HasMaxLength(450);
+
+            entity.HasOne(w => w.DishBatch)
+                .WithMany()
+                .HasForeignKey(w => w.DishBatchId)
                 .OnDelete(DeleteBehavior.Restrict);
         });
     }
