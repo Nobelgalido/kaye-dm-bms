@@ -50,7 +50,7 @@ namespace KayeDM.Infrastructure.Data.Migrations
 
                     b.HasKey("Id");
 
-                    b.ToTable("MenuItems");
+                    b.ToTable("MenuItems", (string)null);
                 });
 
             modelBuilder.Entity("KayeDM.Domain.Entities.Order", b =>
@@ -102,7 +102,7 @@ namespace KayeDM.Infrastructure.Data.Migrations
                     b.HasIndex("OrderNumber")
                         .IsUnique();
 
-                    b.ToTable("Orders");
+                    b.ToTable("Orders", (string)null);
                 });
 
             modelBuilder.Entity("KayeDM.Domain.Entities.OrderLine", b =>
@@ -132,7 +132,7 @@ namespace KayeDM.Infrastructure.Data.Migrations
 
                     b.HasIndex("OrderId");
 
-                    b.ToTable("OrderLines");
+                    b.ToTable("OrderLines", (string)null);
                 });
 
             modelBuilder.Entity("Microsoft.AspNetCore.Identity.IdentityRole", b =>

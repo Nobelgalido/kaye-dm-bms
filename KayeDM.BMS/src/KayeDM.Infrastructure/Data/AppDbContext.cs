@@ -14,6 +14,8 @@ public class AppDbContext : IdentityDbContext<IdentityUser>
     public DbSet<MenuItem> MenuItems => Set<MenuItem>();
     public DbSet<Order> Orders => Set<Order>();
     public DbSet<OrderLine> OrderLines => Set<OrderLine>();
+    public DbSet<BusCompany> BusCompanies => Set<BusCompany>();
+    public DbSet<BusTrip> BusTrips => Set<BusTrip>();
 
     protected override void OnModelCreating(ModelBuilder builder)
     {
@@ -47,6 +49,23 @@ public class AppDbContext : IdentityDbContext<IdentityUser>
             entity.HasOne(l => l.MenuItem)
                 .WithMany()
                 .HasForeignKey(l => l.MenuItemId)
+                .OnDelete(DeleteBehavior.Restrict);
+        });
+
+        builder.Entity<BusCompany>(entity =>
+        {
+            entity.Property(c => c.Name).HasMaxLength(150).IsRequired();
+            entity.Property(c => c.ContactPerson).HasMaxLength(150);
+        });
+
+        builder.Entity<BusTrip>(entity =>
+        {
+            entity.Property(t => t.BusNumber).HasMaxLength(50).IsRequired();
+            entity.Property(t => t.Route).HasMaxLength(200).IsRequired();
+
+            entity.HasOne(t => t.BusCompany)
+                .WithMany()
+                .HasForeignKey(t => t.BusCompanyId)
                 .OnDelete(DeleteBehavior.Restrict);
         });
     }
