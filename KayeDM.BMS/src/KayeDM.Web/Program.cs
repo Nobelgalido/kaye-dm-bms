@@ -1,8 +1,13 @@
+using KayeDM.Infrastructure.Data;
 using KayeDM.Web.Components;
+using Microsoft.EntityFrameworkCore;
 
 var builder = WebApplication.CreateBuilder(args);
 
 // Add services to the container.
+builder.Services.AddDbContext<AppDbContext>(options =>
+    options.UseSqlServer(builder.Configuration.GetConnectionString("KayeDmBms")));
+
 builder.Services.AddRazorComponents()
     .AddInteractiveServerComponents();
 
