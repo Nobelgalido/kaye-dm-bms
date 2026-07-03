@@ -1,0 +1,135 @@
+@page "/buses/arrivals"
+@using System.ComponentModel.DataAnnotations
+@using KayeDM.Application.Buses
+@using KayeDM.Domain.Exceptions
+@inject IBusService BusService
+
+<PageTitle>Bus Arrivals</PageTitle>
+
+<h1>Bus Arrivals</h1>
+
+<EditForm Model="_form" OnValidSubmit="LogArrivalAsync">
+    <DataAnnotationsValidator />
+    <ValidationSummary />
+    <div class="mb-2">
+        <label>Company</label>
+        <InputSelect class="form-control" @bind-Value="_form.BusCompanyId">
+            <option value="0">-- select --</option>
+            @foreach (var company in _companies)
+            {
+                <option value="@company.Id">@company.Name</option>
+            }
+        </InputSelect>
+    </div>
+    <div class="mb-2">
+        <label>Bus Number</label>
+        <InputText class="form-control" @bind-Value="_form.BusNumber" />
+    </div>
+    <div class="mb-2">
+        <label>Route</label>
+        <InputText class="form-control" @bind-Value="_form.Route" />
+    </div>
+    <button type="submit" class="btn btn-success">Bus Arrived</button>
+</EditForm>
+
+@if (_error is not null)
+{
+    <div class="alert alert-danger">@_error</div>
+}
+
+<h2 class="mt-4">Today's Trip Board</h2>
+
+@if (_board is null)
+{
+    <p>Loading…</p>
+}
+else if (_board.Count == 0)
+{
+    <p>No trips logged today.</p>
+}
+else
+{
+    <table class="table">
+        <thead>
+            <tr>
+                <th>Company</th>
+                <th>Bus No.</th>
+                <th>Arrived</th>
+                <th>Meals Used / Allowance</th>
+                <th>Departed</th>
+                <th></th>
+            </tr>
+        </thead>
+        <tbody>
+            @foreach (var row in _board)
+            {
+                <tr>
+                    <td>@row.Trip.BusCompanyName</td>
+                    <td>@row.Trip.BusNumber</td>
+                    <td>@row.Trip.ArrivedAt.ToString("h:mm tt")</td>
+                    <td>@row.MealsUsed / @(row.MealsUsed + row.AllowanceRemaining) (@row.AllowanceRemaining left)</td>
+                    <td>@(row.Trip.DepartedAt is null ? "—" : row.Trip.DepartedAt.Value.ToString("h:mm tt"))</td>
+                    <td>
+                        @if (row.Trip.DepartedAt is null)
+                        {
+                            <button class="btn btn-sm btn-outline-secondary" @onclick="() => DepartAsync(row.Trip.Id)">Depart</button>
+                        }
+                    </td>
+                </tr>
+            }
+        </tbody>
+    </table>
+}
+
+@code {
+    private List<BusCompanyDto> _companies = new();
+    private List<BusTripBoardRow>? _board;
+    private ArrivalForm _form = new();
+    private string? _error;
+
+    protected override async Task OnInitializedAsync()
+    {
+        _companies = await BusService.GetCompaniesAsync();
+        await LoadBoardAsync();
+    }
+
+    private async Task LoadBoardAsync() => _board = await BusService.GetTodaysTripBoardAsync();
+
+    private async Task LogArrivalAsync()
+    {
+        _error = null;
+        if (_form.BusCompanyId <= 0)
+        {
+            _error = "Select a bus company.";
+            return;
+        }
+
+        try
+        {
+            await BusService.LogArrivalAsync(new LogArrivalRequest(_form.BusCompanyId, _form.BusNumber, _form.Route, null));
+            _form = new ArrivalForm();
+            await LoadBoardAsync();
+        }
+        catch (DomainException ex)
+        {
+            _error = ex.Message;
+        }
+    }
+
+    private async Task DepartAsync(int tripId)
+    {
+        await BusService.DepartAsync(tripId);
+        await LoadBoardAsync();
+    }
+
+    private class ArrivalForm
+    {
+        public int BusCompanyId { get; set; }
+
+        [Required]
+        public string BusNumber { get; set; } = "";
+
+        [Required]
+        public string Route { get; set; } = "";
+    }
+}
