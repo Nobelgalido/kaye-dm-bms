@@ -19,8 +19,8 @@ public class Order
     public decimal AmountTendered { get; set; }
     public decimal ChangeGiven { get; set; }
 
-    // TODO Week 2: FK to BusTrip
     public int? BusTripId { get; set; }
+    public BusTrip? BusTrip { get; set; }
 
     public bool IsCrewMeal { get; set; } = false;
 
