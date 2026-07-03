@@ -1,0 +1,169 @@
+@page "/pos"
+@using KayeDM.Application.Menu
+@using KayeDM.Application.Orders
+@using KayeDM.Domain.Enums
+@using KayeDM.Domain.Exceptions
+@inject IMenuItemService MenuItemService
+@inject IOrderService OrderService
+
+<PageTitle>POS</PageTitle>
+
+<div class="pos-layout">
+    <div class="pos-menu">
+        <div class="category-tabs">
+            @foreach (var category in Enum.GetValues<MenuCategory>())
+            {
+                <button class="btn @(category == _activeCategory ? "btn-primary" : "btn-outline-primary")"
+                        @onclick="() => _activeCategory = category">
+                    @category
+                </button>
+            }
+        </div>
+        <div class="menu-grid">
+            @foreach (var item in _menuItems.Where(m => m.Category == _activeCategory))
+            {
+                <button class="menu-button" @onclick="() => AddLine(item)">
+                    <div>@item.Name</div>
+                    <div>@FormatPeso(item.Price)</div>
+                </button>
+            }
+        </div>
+    </div>
+
+    <div class="pos-ticket">
+        <h3>Ticket</h3>
+        @if (_ticket.Count == 0)
+        {
+            <p>No items yet.</p>
+        }
+        else
+        {
+            @foreach (var line in _ticket)
+            {
+                <div class="ticket-line">
+                    <span>@line.MenuItem.Name</span>
+                    <button @onclick="() => ChangeQty(line, -1)">-</button>
+                    <span>@line.Quantity</span>
+                    <button @onclick="() => ChangeQty(line, 1)">+</button>
+                    <span>@FormatPeso(line.MenuItem.Price * line.Quantity)</span>
+                    <button @onclick="() => RemoveLine(line)">Remove</button>
+                </div>
+            }
+        }
+        <div class="ticket-total">Total: @FormatPeso(Total)</div>
+    </div>
+
+    <div class="pos-payment">
+        <div>
+            <button class="btn @(_paymentMethod == PaymentMethod.Cash ? "btn-primary" : "btn-outline-primary")"
+                    @onclick="() => _paymentMethod = PaymentMethod.Cash">Cash</button>
+            <button class="btn @(_paymentMethod == PaymentMethod.GCash ? "btn-primary" : "btn-outline-primary")"
+                    @onclick="() => _paymentMethod = PaymentMethod.GCash">GCash</button>
+        </div>
+        <div class="quick-amounts">
+            @foreach (var amount in new decimal[] { 100, 200, 500, 1000 })
+            {
+                <button class="btn btn-outline-secondary" @onclick="() => Tendered = amount">@FormatPeso(amount)</button>
+            }
+        </div>
+        <div>
+            <label>Tendered</label>
+            <input type="number" class="form-control" @bind="Tendered" step="0.01" />
+        </div>
+        <div>Change: @FormatPeso(Change)</div>
+        <button class="btn btn-success btn-lg" disabled="@(!CanComplete)" @onclick="CompleteAsync">Complete</button>
+        <button class="btn btn-link" @onclick="ClearTicket">Clear</button>
+
+        @if (_lastOrderNumber is not null)
+        {
+            <div class="alert alert-success">Order @_lastOrderNumber saved. Change: @FormatPeso(_lastChange)</div>
+        }
+        @if (_error is not null)
+        {
+            <div class="alert alert-danger">@_error</div>
+        }
+    </div>
+</div>
+
+@code {
+    private List<MenuItemDto> _menuItems = new();
+    private MenuCategory _activeCategory = MenuCategory.Ulam;
+    private List<TicketLine> _ticket = new();
+    private PaymentMethod _paymentMethod = PaymentMethod.Cash;
+    private decimal Tendered { get; set; }
+    private string? _lastOrderNumber;
+    private decimal _lastChange;
+    private string? _error;
+
+    private decimal Total => _ticket.Sum(l => l.MenuItem.Price * l.Quantity);
+    private decimal Change => Tendered - Total;
+    private bool CanComplete => _ticket.Count > 0 && Tendered >= Total;
+
+    protected override async Task OnInitializedAsync()
+    {
+        _menuItems = await MenuItemService.GetAllAsync();
+    }
+
+    private void AddLine(MenuItemDto item)
+    {
+        var existing = _ticket.FirstOrDefault(l => l.MenuItem.Id == item.Id);
+        if (existing is not null)
+        {
+            existing.Quantity++;
+        }
+        else
+        {
+            _ticket.Add(new TicketLine { MenuItem = item, Quantity = 1 });
+        }
+    }
+
+    private void ChangeQty(TicketLine line, int delta)
+    {
+        line.Quantity += delta;
+        if (line.Quantity <= 0)
+        {
+            _ticket.Remove(line);
+        }
+    }
+
+    private void RemoveLine(TicketLine line) => _ticket.Remove(line);
+
+    private void ClearTicket()
+    {
+        _ticket.Clear();
+        Tendered = 0;
+        _lastOrderNumber = null;
+        _error = null;
+    }
+
+    private static string FormatPeso(decimal amount) => string.Format("₱{0:N2}", amount);
+
+    private async Task CompleteAsync()
+    {
+        _error = null;
+        try
+        {
+            var request = new CreateOrderRequest(
+                _ticket.Select(l => new OrderLineRequest(l.MenuItem.Id, l.Quantity)).ToList(),
+                _paymentMethod,
+                Tendered,
+                CashierId: null);
+
+            var result = await OrderService.CreateOrderAsync(request);
+            _lastOrderNumber = result.OrderNumber;
+            _lastChange = result.ChangeGiven;
+            _ticket.Clear();
+            Tendered = 0;
+        }
+        catch (DomainException ex)
+        {
+            _error = ex.Message;
+        }
+    }
+
+    private class TicketLine
+    {
+        public MenuItemDto MenuItem { get; set; } = null!;
+        public int Quantity { get; set; }
+    }
+}
