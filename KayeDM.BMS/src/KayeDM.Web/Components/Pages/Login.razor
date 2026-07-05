@@ -1,28 +1,35 @@
 @page "/account/login"
-@using Microsoft.AspNetCore.Components
 
-<PageTitle>Log In</PageTitle>
+<PageTitle>Log In — Kaye & DM BMS</PageTitle>
 
-<h1>Log In</h1>
+<div class="login-page">
+    <div class="login-card">
+        <img class="login-card__logo" src="img/kaye-dm-logo-3d-192.png" alt="Kaye &amp; DM" width="120" height="120" />
+        <h1 class="login-card__title">Kaye &amp; DM BMS</h1>
+        <RouteDivider DotColorToken="sili-coral" />
 
-@if (HasError)
-{
-    <div class="alert alert-danger">Invalid email or password.</div>
-}
+        @if (HasError)
+        {
+            <div class="login-card__error" role="alert">Invalid email or password.</div>
+        }
 
-<form method="post" action="account/do-login">
-    <AntiforgeryToken />
-    <input type="hidden" name="returnUrl" value="@ReturnUrl" />
-    <div class="mb-2">
-        <label>Email</label>
-        <input type="email" name="email" class="form-control" required />
+        <form method="post" action="account/do-login" class="login-card__form">
+            <AntiforgeryToken />
+            <input type="hidden" name="returnUrl" value="@ReturnUrl" />
+            <div class="login-card__field">
+                <label for="login-email">Email</label>
+                <input id="login-email" type="email" name="email" required autocomplete="username" />
+            </div>
+            <div class="login-card__field">
+                <label for="login-password">Password</label>
+                <input id="login-password" type="password" name="password" required autocomplete="current-password" />
+            </div>
+            <button type="submit" class="login-card__submit">Log In</button>
+        </form>
+
+        <p class="login-card__tagline">Kaye &amp; DM <span class="login-card__tagline-coral">mealstop</span> · Sorsogon</p>
     </div>
-    <div class="mb-2">
-        <label>Password</label>
-        <input type="password" name="password" class="form-control" required />
-    </div>
-    <button type="submit" class="btn btn-primary">Log In</button>
-</form>
+</div>
 
 @code {
     [SupplyParameterFromQuery]
