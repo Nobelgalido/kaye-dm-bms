@@ -33,7 +33,17 @@ builder.Services.AddAuthentication(options =>
     options.DefaultScheme = IdentityConstants.ApplicationScheme;
     options.DefaultSignInScheme = IdentityConstants.ExternalScheme;
 })
-    .AddIdentityCookies();
+    .AddIdentityCookies(cookieOptions =>
+    {
+        // Defaults are /Account/Login and /Account/AccessDenied -- neither
+        // exists in this app. Wrong-role (but authenticated) users go home
+        // rather than back to a login page they've already passed.
+        cookieOptions.ApplicationCookie?.Configure(options =>
+        {
+            options.LoginPath = "/account/login";
+            options.AccessDeniedPath = "/";
+        });
+    });
 
 builder.Services.AddAuthorizationCore();
 
