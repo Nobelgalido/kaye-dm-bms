@@ -13,6 +13,7 @@ using KayeDM.Infrastructure.Inventory;
 using KayeDM.Infrastructure.Menu;
 using KayeDM.Infrastructure.Orders;
 using KayeDM.Web.Components;
+using ApexCharts;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 
@@ -28,6 +29,7 @@ builder.Services.AddScoped<IBusService, BusService>();
 builder.Services.AddScoped<IInventoryService, InventoryService>();
 builder.Services.AddScoped<IExpenseService, ExpenseService>();
 builder.Services.AddScoped<IClosingService, ClosingService>();
+builder.Services.AddApexCharts();
 
 builder.Services.AddCascadingAuthenticationState();
 
