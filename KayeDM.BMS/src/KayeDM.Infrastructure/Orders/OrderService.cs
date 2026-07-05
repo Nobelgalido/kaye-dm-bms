@@ -3,6 +3,7 @@ using KayeDM.Domain.Entities;
 using KayeDM.Domain.Enums;
 using KayeDM.Domain.Exceptions;
 using KayeDM.Infrastructure.Data;
+using KayeDM.Infrastructure.Inventory;
 using Microsoft.EntityFrameworkCore;
 
 namespace KayeDM.Infrastructure.Orders;
@@ -42,6 +43,8 @@ public class OrderService : IOrderService
 
         decimal total = 0m;
         var lineResults = new List<OrderLineResult>();
+        var today = DateTime.Now.Date;
+        var wasOversold = false;
 
         foreach (var lineRequest in request.Lines)
         {
@@ -53,6 +56,22 @@ public class OrderService : IOrderService
             if (lineRequest.Quantity <= 0)
             {
                 throw new DomainException("Line quantity must be positive.");
+            }
+
+            var hasBatchToday = await db.DishBatches.AnyAsync(b => b.MenuItemId == menuItem.Id && b.Date == today);
+            if (hasBatchToday)
+            {
+                var available = await AvailabilityCalculator.GetAvailableServingsAsync(db, menuItem.Id, today);
+                if (lineRequest.Quantity > available)
+                {
+                    if (!request.OversoldOverride)
+                    {
+                        throw new OversoldException(
+                            $"Selling {lineRequest.Quantity} of {menuItem.Name} exceeds available servings ({available} left). Confirm to sell anyway.");
+                    }
+
+                    wasOversold = true;
+                }
             }
 
             var unitPrice = menuItem.Price;
@@ -68,6 +87,8 @@ public class OrderService : IOrderService
 
             lineResults.Add(new OrderLineResult(menuItem.Id, menuItem.Name, lineRequest.Quantity, unitPrice, lineTotal));
         }
+
+        order.OversoldOverride = wasOversold;
 
         if (request.PaymentMethod == PaymentMethod.GCash)
         {

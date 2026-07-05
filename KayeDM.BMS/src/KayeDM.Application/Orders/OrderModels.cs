@@ -9,7 +9,8 @@ public record CreateOrderRequest(
     PaymentMethod PaymentMethod,
     decimal AmountTendered,
     string? CashierId,
-    int? BusTripId = null);
+    int? BusTripId = null,
+    bool OversoldOverride = false);
 
 public record CreateCrewMealOrderRequest(
     IReadOnlyList<OrderLineRequest> Lines,
