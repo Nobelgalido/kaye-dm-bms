@@ -21,6 +21,7 @@ public class AppDbContext : IdentityDbContext<IdentityUser>
     public DbSet<WasteLog> WasteLogs => Set<WasteLog>();
     public DbSet<ExpenseCategory> ExpenseCategories => Set<ExpenseCategory>();
     public DbSet<Expense> Expenses => Set<Expense>();
+    public DbSet<DailyClosing> DailyClosings => Set<DailyClosing>();
 
     protected override void OnModelCreating(ModelBuilder builder)
     {
@@ -134,6 +135,18 @@ public class AppDbContext : IdentityDbContext<IdentityUser>
                 .WithMany()
                 .HasForeignKey(e => e.ExpenseCategoryId)
                 .OnDelete(DeleteBehavior.Restrict);
+        });
+
+        builder.Entity<DailyClosing>(entity =>
+        {
+            entity.Property(c => c.TotalSales).HasPrecision(10, 2);
+            entity.Property(c => c.CashSales).HasPrecision(10, 2);
+            entity.Property(c => c.GCashSales).HasPrecision(10, 2);
+            entity.Property(c => c.TotalExpenses).HasPrecision(10, 2);
+            entity.Property(c => c.NetForDay).HasPrecision(10, 2);
+            entity.Property(c => c.ClosedById).HasMaxLength(450);
+
+            entity.HasIndex(c => c.Date).IsUnique();
         });
     }
 }
