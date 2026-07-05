@@ -15,6 +15,13 @@ public class SeedDataGenerator
     private readonly DateTime _windowStart;
     private readonly HashSet<DateTime> _negativeDays;
 
+    private static readonly (TimeSpan Start, TimeSpan End)[] Waves =
+    {
+        (new TimeSpan(9, 30, 0), new TimeSpan(10, 30, 0)),
+        (new TimeSpan(13, 30, 0), new TimeSpan(14, 30, 0)),
+        (new TimeSpan(18, 0, 0), new TimeSpan(19, 30, 0))
+    };
+
     public SeedDataGenerator()
     {
         _windowStart = _windowEnd.AddDays(-29);
@@ -117,5 +124,158 @@ public class SeedDataGenerator
         db.BusCompanies.AddRange(companies);
         await db.SaveChangesAsync();
         return companies;
+    }
+
+    private async Task<List<BusTrip>> SeedBusTripsForDayAsync(AppDbContext db, DateTime day, List<BusCompany> companies)
+    {
+        var trips = new List<BusTrip>();
+
+        foreach (var (start, end) in Waves)
+        {
+            var arrivalsThisWave = _random.Next(1, 4); // 1-3 buses per wave
+            for (var i = 0; i < arrivalsThisWave; i++)
+            {
+                var company = companies[_random.Next(companies.Count)];
+                var windowMinutes = (int)(end - start).TotalMinutes;
+                var arrivedAt = day.Date + start + TimeSpan.FromMinutes(_random.Next(0, windowMinutes));
+
+                var trip = new BusTrip
+                {
+                    BusCompanyId = company.Id,
+                    BusNumber = (8000 + _random.Next(0, 999)).ToString(),
+                    Route = "Manila-Sorsogon",
+                    ArrivedAt = arrivedAt,
+                    DepartedAt = arrivedAt.AddMinutes(20 + _random.Next(0, 15))
+                };
+                trips.Add(trip);
+            }
+        }
+
+        db.BusTrips.AddRange(trips);
+        await db.SaveChangesAsync();
+        return trips;
+    }
+
+    private async Task SeedOrdersForDayAsync(AppDbContext db, DateTime day, List<MenuItem> menuItems, List<BusTrip> trips)
+    {
+        var orderCount = _random.Next(60, 141);
+        var sequence = 0;
+        var createdOrders = new List<Order>();
+
+        for (var i = 0; i < orderCount; i++)
+        {
+            DateTime timestamp;
+            if (_random.NextDouble() < 0.8 && Waves.Length > 0)
+            {
+                var (start, end) = Waves[_random.Next(Waves.Length)];
+                var center = day.Date + start + TimeSpan.FromTicks((end - start).Ticks / 2);
+                var jitterMinutes = _random.Next(-25, 26);
+                timestamp = center.AddMinutes(jitterMinutes);
+            }
+            else
+            {
+                var minute = _random.Next(8 * 60, 20 * 60); // 8am-8pm trickle
+                timestamp = day.Date + TimeSpan.FromMinutes(minute);
+            }
+
+            sequence++;
+            var orderNumber = $"{day:yyyyMMdd}-{sequence:D3}";
+            var isCash = _random.NextDouble() < 0.85;
+            var lineCount = _random.Next(1, 5);
+
+            var order = new Order
+            {
+                OrderNumber = orderNumber,
+                CreatedAt = timestamp,
+                Status = OrderStatus.Completed,
+                PaymentMethod = isCash ? PaymentMethod.Cash : PaymentMethod.GCash
+            };
+
+            decimal total = 0m;
+            for (var l = 0; l < lineCount; l++)
+            {
+                var item = menuItems[_random.Next(menuItems.Count)];
+                var quantity = _random.Next(1, 4);
+                total += item.Price * quantity;
+                order.Lines.Add(new OrderLine { MenuItemId = item.Id, Quantity = quantity, UnitPriceAtSale = item.Price });
+            }
+
+            var nearbyTrip = trips.FirstOrDefault(t => Math.Abs((timestamp - t.ArrivedAt).TotalMinutes) <= 20);
+            if (nearbyTrip is not null && _random.NextDouble() < 0.5)
+            {
+                order.BusTripId = nearbyTrip.Id;
+            }
+
+            if (isCash)
+            {
+                var overpay = new[] { 0m, 10m, 20m, 50m }[_random.Next(4)];
+                order.AmountTendered = total + overpay;
+                order.ChangeGiven = overpay;
+            }
+            else
+            {
+                order.AmountTendered = total;
+                order.ChangeGiven = 0m;
+            }
+
+            createdOrders.Add(order);
+        }
+
+        db.Orders.AddRange(createdOrders);
+        await db.SaveChangesAsync();
+
+        // Occasional voids -- ~4% of the day's completed orders.
+        var voidCandidates = createdOrders.Where(o => _random.NextDouble() < 0.04).ToList();
+        foreach (var order in voidCandidates)
+        {
+            order.Status = OrderStatus.Voided;
+            order.VoidReason = "Customer changed mind";
+        }
+        if (voidCandidates.Count > 0)
+        {
+            await db.SaveChangesAsync();
+        }
+
+        // Crew meals on ~90% of trips, up to each trip's company allowance.
+        foreach (var trip in trips)
+        {
+            if (_random.NextDouble() >= 0.9)
+            {
+                continue;
+            }
+
+            var company = await db.BusCompanies.FirstAsync(c => c.Id == trip.BusCompanyId);
+            var mealsToGive = _random.Next(1, company.CrewMealAllowancePerTrip + 1);
+            var roles = Enum.GetValues<CrewRole>();
+
+            for (var m = 0; m < mealsToGive; m++)
+            {
+                sequence++;
+                var item = menuItems[_random.Next(menuItems.Count)];
+                var crewOrder = new Order
+                {
+                    OrderNumber = $"{day:yyyyMMdd}-{sequence:D3}",
+                    CreatedAt = trip.ArrivedAt.AddMinutes(_random.Next(5, 20)),
+                    Status = OrderStatus.Completed,
+                    PaymentMethod = PaymentMethod.Cash,
+                    BusTripId = trip.Id,
+                    IsCrewMeal = true,
+                    AmountTendered = 0m,
+                    ChangeGiven = 0m,
+                    Lines = { new OrderLine { MenuItemId = item.Id, Quantity = 1, UnitPriceAtSale = 0m } }
+                };
+
+                db.Orders.Add(crewOrder);
+                db.CrewMealCredits.Add(new CrewMealCredit
+                {
+                    BusTripId = trip.Id,
+                    CrewRole = roles[m % roles.Length],
+                    Order = crewOrder,
+                    LoggedAt = crewOrder.CreatedAt
+                });
+            }
+        }
+
+        await db.SaveChangesAsync();
     }
 }
