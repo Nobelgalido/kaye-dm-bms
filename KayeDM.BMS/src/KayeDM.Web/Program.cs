@@ -29,6 +29,12 @@ builder.Services.AddRazorComponents()
 
 var app = builder.Build();
 
+using (var scope = app.Services.CreateScope())
+{
+    var expenseService = scope.ServiceProvider.GetRequiredService<IExpenseService>();
+    await expenseService.SeedDefaultCategoriesAsync();
+}
+
 // Configure the HTTP request pipeline.
 if (!app.Environment.IsDevelopment())
 {

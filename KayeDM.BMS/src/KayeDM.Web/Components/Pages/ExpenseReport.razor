@@ -1,0 +1,108 @@
+@page "/expenses/report"
+@using KayeDM.Application.Expenses
+@inject IExpenseService ExpenseService
+
+<PageTitle>Expense Report</PageTitle>
+
+<h1>Monthly Expense Summary</h1>
+
+<div class="mb-3">
+    <label>From (yyyy-MM-dd)</label>
+    <input type="text" class="form-control" placeholder="2026-07-01" @bind="_fromInput" />
+    <label>To (yyyy-MM-dd)</label>
+    <input type="text" class="form-control" placeholder="2026-07-31" @bind="_toInput" />
+    <label>Category</label>
+    <select class="form-control" @bind="_categoryId">
+        <option value="0">-- all --</option>
+        @foreach (var category in _categories)
+        {
+            <option value="@category.Id">@category.Name</option>
+        }
+    </select>
+    <button class="btn btn-primary mt-2" @onclick="LoadAsync">Run Report</button>
+</div>
+
+@if (_error is not null)
+{
+    <div class="alert alert-danger">@_error</div>
+}
+
+@if (_summary is not null)
+{
+    @if (_summary.Rows.Count == 0)
+    {
+        <p>No expenses in this range.</p>
+    }
+    else
+    {
+        <table class="table">
+            <thead>
+                <tr>
+                    <th>Category</th>
+                    @foreach (var month in _summary.Months)
+                    {
+                        <th>@month</th>
+                    }
+                    <th>Total</th>
+                </tr>
+            </thead>
+            <tbody>
+                @foreach (var row in _summary.Rows)
+                {
+                    <tr>
+                        <td>@row.CategoryName</td>
+                        @foreach (var month in _summary.Months)
+                        {
+                            <td>@FormatPeso(row.AmountsByMonth[month])</td>
+                        }
+                        <td>@FormatPeso(row.Total)</td>
+                    </tr>
+                }
+            </tbody>
+            <tfoot>
+                <tr>
+                    <th>Grand Total</th>
+                    @foreach (var month in _summary.Months)
+                    {
+                        <th>@FormatPeso(_summary.TotalsByMonth[month])</th>
+                    }
+                    <th>@FormatPeso(_summary.GrandTotal)</th>
+                </tr>
+            </tfoot>
+        </table>
+    }
+}
+
+@code {
+    private List<ExpenseCategoryDto> _categories = new();
+    private string _fromInput = new DateTime(DateTime.Now.Year, DateTime.Now.Month, 1).ToString("yyyy-MM-dd");
+    private string _toInput = DateTime.Now.Date.ToString("yyyy-MM-dd");
+    private int _categoryId;
+    private ExpenseMonthlySummaryResult? _summary;
+    private string? _error;
+
+    protected override async Task OnInitializedAsync() => _categories = await ExpenseService.GetCategoriesAsync(includeInactive: true);
+
+    private async Task LoadAsync()
+    {
+        _error = null;
+        _summary = null;
+
+        if (!DateOnly.TryParse(_fromInput, out var from) || !DateOnly.TryParse(_toInput, out var to))
+        {
+            _error = "Select a valid date range.";
+            return;
+        }
+
+        if (to < from)
+        {
+            _error = "'To' date must be on or after 'From' date.";
+            return;
+        }
+
+        int? categoryId = _categoryId > 0 ? _categoryId : null;
+        _summary = await ExpenseService.GetMonthlySummaryAsync(from, to, categoryId);
+    }
+
+    private static string FormatPeso(decimal amount) => string.Format("₱{0:N2}", amount);
+}
