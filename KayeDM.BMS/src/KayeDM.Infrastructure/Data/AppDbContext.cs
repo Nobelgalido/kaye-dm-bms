@@ -19,6 +19,8 @@ public class AppDbContext : IdentityDbContext<IdentityUser>
     public DbSet<CrewMealCredit> CrewMealCredits => Set<CrewMealCredit>();
     public DbSet<DishBatch> DishBatches => Set<DishBatch>();
     public DbSet<WasteLog> WasteLogs => Set<WasteLog>();
+    public DbSet<ExpenseCategory> ExpenseCategories => Set<ExpenseCategory>();
+    public DbSet<Expense> Expenses => Set<Expense>();
 
     protected override void OnModelCreating(ModelBuilder builder)
     {
@@ -112,6 +114,25 @@ public class AppDbContext : IdentityDbContext<IdentityUser>
             entity.HasOne(w => w.DishBatch)
                 .WithMany()
                 .HasForeignKey(w => w.DishBatchId)
+                .OnDelete(DeleteBehavior.Restrict);
+        });
+
+        builder.Entity<ExpenseCategory>(entity =>
+        {
+            entity.Property(c => c.Name).HasMaxLength(100).IsRequired();
+        });
+
+        builder.Entity<Expense>(entity =>
+        {
+            entity.Property(e => e.Description).HasMaxLength(250).IsRequired();
+            entity.Property(e => e.Amount).HasPrecision(10, 2);
+            entity.Property(e => e.Vendor).HasMaxLength(150);
+            entity.Property(e => e.ReceiptRef).HasMaxLength(100);
+            entity.Property(e => e.LoggedById).HasMaxLength(450);
+
+            entity.HasOne(e => e.ExpenseCategory)
+                .WithMany()
+                .HasForeignKey(e => e.ExpenseCategoryId)
                 .OnDelete(DeleteBehavior.Restrict);
         });
     }
