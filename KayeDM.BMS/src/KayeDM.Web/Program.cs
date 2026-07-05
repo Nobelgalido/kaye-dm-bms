@@ -45,12 +45,16 @@ builder.Services.AddAuthentication(options =>
     .AddIdentityCookies(cookieOptions =>
     {
         // Defaults are /Account/Login and /Account/AccessDenied -- neither
-        // exists in this app. Wrong-role (but authenticated) users go home
-        // rather than back to a login page they've already passed.
+        // exists in this app. A full-page request for a route the signed-in
+        // user's role can't reach is rejected by ASP.NET Core's authorization
+        // middleware (via the page's [Authorize(Roles=...)] endpoint metadata)
+        // before Blazor's router ever runs, so it's this AccessDeniedPath --
+        // not Routes.razor's NotAuthorized branch -- that actually renders
+        // the friendly access-denied view for that case.
         cookieOptions.ApplicationCookie?.Configure(options =>
         {
             options.LoginPath = "/account/login";
-            options.AccessDeniedPath = "/";
+            options.AccessDeniedPath = "/access-denied";
         });
     });
 
