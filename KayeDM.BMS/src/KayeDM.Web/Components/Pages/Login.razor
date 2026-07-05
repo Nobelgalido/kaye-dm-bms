@@ -1,0 +1,35 @@
+@page "/account/login"
+@using Microsoft.AspNetCore.Components
+
+<PageTitle>Log In</PageTitle>
+
+<h1>Log In</h1>
+
+@if (HasError)
+{
+    <div class="alert alert-danger">Invalid email or password.</div>
+}
+
+<form method="post" action="account/do-login">
+    <AntiforgeryToken />
+    <input type="hidden" name="returnUrl" value="@ReturnUrl" />
+    <div class="mb-2">
+        <label>Email</label>
+        <input type="email" name="email" class="form-control" required />
+    </div>
+    <div class="mb-2">
+        <label>Password</label>
+        <input type="password" name="password" class="form-control" required />
+    </div>
+    <button type="submit" class="btn btn-primary">Log In</button>
+</form>
+
+@code {
+    [SupplyParameterFromQuery]
+    private string? Error { get; set; }
+
+    [SupplyParameterFromQuery]
+    private string? ReturnUrl { get; set; }
+
+    private bool HasError => Error is not null;
+}

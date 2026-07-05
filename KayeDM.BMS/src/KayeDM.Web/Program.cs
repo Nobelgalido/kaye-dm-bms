@@ -73,4 +73,25 @@ app.UseAntiforgery();
 app.MapRazorComponents<App>()
     .AddInteractiveServerRenderMode();
 
+app.MapPost("/account/do-login", async (HttpContext context, SignInManager<IdentityUser> signInManager) =>
+{
+    var form = await context.Request.ReadFormAsync();
+    var email = form["email"].ToString();
+    var password = form["password"].ToString();
+    var returnUrl = form["returnUrl"].ToString();
+
+    var result = await signInManager.PasswordSignInAsync(email, password, isPersistent: true, lockoutOnFailure: false);
+
+    var target = string.IsNullOrEmpty(returnUrl) ? "/" : returnUrl;
+    return result.Succeeded
+        ? Results.LocalRedirect(target)
+        : Results.LocalRedirect($"/account/login?error=1&returnUrl={Uri.EscapeDataString(target)}");
+});
+
+app.MapPost("/account/logout", async (SignInManager<IdentityUser> signInManager) =>
+{
+    await signInManager.SignOutAsync();
+    return Results.LocalRedirect("/account/login");
+});
+
 app.Run();
