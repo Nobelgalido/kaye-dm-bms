@@ -1,5 +1,6 @@
 @page "/pos"
 @using KayeDM.Application.Buses
+@using KayeDM.Application.Inventory
 @using KayeDM.Application.Menu
 @using KayeDM.Application.Orders
 @using KayeDM.Domain.Enums
@@ -7,6 +8,7 @@
 @inject IMenuItemService MenuItemService
 @inject IOrderService OrderService
 @inject IBusService BusService
+@inject IInventoryService InventoryService
 
 <PageTitle>POS</PageTitle>
 
@@ -27,6 +29,22 @@
                 <button class="menu-button" @onclick="() => AddLine(item)">
                     <div>@item.Name</div>
                     <div>@FormatPeso(item.Price)</div>
+                    @{
+                        var availability = _availability.FirstOrDefault(a => a.MenuItemId == item.Id);
+                    }
+                    @if (availability is not null)
+                    {
+                        @if (!availability.HasBatchToday)
+                        {
+                            <div class="availability-badge">no batch</div>
+                        }
+                        else
+                        {
+                            <div class="availability-badge @(availability.AvailableServings <= 5 ? "availability-low" : "")">
+                                @availability.AvailableServings left
+                            </div>
+                        }
+                    }
                 </button>
             }
         </div>
@@ -123,6 +141,13 @@
         {
             <div class="alert alert-success">Order @_lastOrderNumber saved. Change: @FormatPeso(_lastChange)</div>
         }
+        @if (_oversoldWarning is not null)
+        {
+            <div class="alert alert-warning">
+                @_oversoldWarning
+                <button type="button" class="btn btn-sm btn-warning" @onclick="ConfirmOversoldAndCompleteAsync">Confirm &amp; Sell Anyway</button>
+            </div>
+        }
         @if (_error is not null)
         {
             <div class="alert alert-danger">@_error</div>
@@ -139,11 +164,14 @@
     private string? _lastOrderNumber;
     private decimal _lastChange;
     private string? _error;
+    private string? _oversoldWarning;
+    private bool _oversoldConfirmed;
 
     private List<BusTripDto> _recentTrips = new();
     private int? _selectedBusTripId;
     private bool _isCrewMealMode;
     private CrewRole _crewRole = CrewRole.Driver;
+    private List<MenuItemAvailabilityDto> _availability = new();
 
     private decimal Total => _ticket.Sum(l => l.MenuItem.Price * l.Quantity);
     private decimal Change => Tendered - Total;
@@ -156,6 +184,7 @@
     protected override async Task OnInitializedAsync()
     {
         _menuItems = await MenuItemService.GetAllAsync();
+        _availability = await InventoryService.GetTodaysAvailabilityAsync();
         await RefreshTripsAsync();
     }
 
@@ -194,6 +223,8 @@
         Tendered = 0;
         _lastOrderNumber = null;
         _error = null;
+        _oversoldWarning = null;
+        _oversoldConfirmed = false;
         _isCrewMealMode = false;
         _selectedBusTripId = null;
     }
@@ -229,7 +260,8 @@
                     _paymentMethod,
                     Tendered,
                     CashierId: null,
-                    BusTripId: _selectedBusTripId);
+                    BusTripId: _selectedBusTripId,
+                    OversoldOverride: _oversoldConfirmed);
 
                 result = await OrderService.CreateOrderAsync(request);
             }
@@ -240,7 +272,14 @@
             Tendered = 0;
             _isCrewMealMode = false;
             _selectedBusTripId = null;
+            _oversoldConfirmed = false;
+            _oversoldWarning = null;
             await RefreshTripsAsync();
+            _availability = await InventoryService.GetTodaysAvailabilityAsync();
+        }
+        catch (OversoldException ex)
+        {
+            _oversoldWarning = ex.Message;
         }
         catch (DomainException ex)
         {
@@ -250,6 +289,12 @@
         {
             _error = "Something went wrong completing this order. Please try again.";
         }
+    }
+
+    private async Task ConfirmOversoldAndCompleteAsync()
+    {
+        _oversoldConfirmed = true;
+        await CompleteAsync();
     }
 
     private class TicketLine
