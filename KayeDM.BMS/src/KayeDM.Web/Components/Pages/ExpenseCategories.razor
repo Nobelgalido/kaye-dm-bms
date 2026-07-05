@@ -1,0 +1,129 @@
+@page "/expenses/categories"
+@using System.ComponentModel.DataAnnotations
+@using KayeDM.Application.Expenses
+@using KayeDM.Domain.Enums
+@inject IExpenseService ExpenseService
+
+<PageTitle>Expense Categories</PageTitle>
+
+<h1>Expense Categories</h1>
+
+<button class="btn btn-primary mb-3" @onclick="StartCreate">+ Add Category</button>
+
+@if (_categories is null)
+{
+    <p>Loading…</p>
+}
+else if (_categories.Count == 0)
+{
+    <p>No expense categories yet.</p>
+}
+else
+{
+    <table class="table">
+        <thead>
+            <tr>
+                <th>Name</th>
+                <th>Type</th>
+                <th>Status</th>
+                <th></th>
+            </tr>
+        </thead>
+        <tbody>
+            @foreach (var category in _categories)
+            {
+                <tr>
+                    <td>@category.Name</td>
+                    <td>@category.Type</td>
+                    <td>@(category.IsActive ? "Active" : "Inactive")</td>
+                    <td>
+                        <button class="btn btn-sm btn-secondary" @onclick="() => StartEdit(category)">Edit</button>
+                        <button class="btn btn-sm btn-outline-danger" @onclick="() => ToggleActiveAsync(category)">
+                            @(category.IsActive ? "Deactivate" : "Activate")
+                        </button>
+                    </td>
+                </tr>
+            }
+        </tbody>
+    </table>
+}
+
+@if (_editing)
+{
+    <EditForm Model="_form" OnValidSubmit="SaveAsync">
+        <DataAnnotationsValidator />
+        <ValidationSummary />
+        <div class="mb-2">
+            <label>Name</label>
+            <InputText class="form-control" @bind-Value="_form.Name" />
+        </div>
+        <div class="mb-2">
+            <label>Type</label>
+            <InputSelect class="form-control" @bind-Value="_form.Type">
+                @foreach (var type in Enum.GetValues<ExpenseCategoryType>())
+                {
+                    <option value="@type">@type</option>
+                }
+            </InputSelect>
+        </div>
+        <button type="submit" class="btn btn-success">Save</button>
+        <button type="button" class="btn btn-link" @onclick="CancelEdit">Cancel</button>
+    </EditForm>
+}
+
+@code {
+    private List<ExpenseCategoryDto>? _categories;
+    private bool _editing;
+    private int _editingId;
+    private CategoryForm _form = new();
+
+    protected override async Task OnInitializedAsync() => await LoadAsync();
+
+    private async Task LoadAsync() => _categories = await ExpenseService.GetCategoriesAsync(includeInactive: true);
+
+    private void StartCreate()
+    {
+        _editingId = 0;
+        _form = new CategoryForm();
+        _editing = true;
+    }
+
+    private void StartEdit(ExpenseCategoryDto category)
+    {
+        _editingId = category.Id;
+        _form = new CategoryForm { Name = category.Name, Type = category.Type };
+        _editing = true;
+    }
+
+    private void CancelEdit() => _editing = false;
+
+    private async Task SaveAsync()
+    {
+        var dto = new ExpenseCategoryUpsertDto(_form.Name, _form.Type);
+        if (_editingId > 0)
+        {
+            await ExpenseService.UpdateCategoryAsync(_editingId, dto);
+        }
+        else
+        {
+            await ExpenseService.CreateCategoryAsync(dto);
+        }
+
+        _editing = false;
+        await LoadAsync();
+    }
+
+    private async Task ToggleActiveAsync(ExpenseCategoryDto category)
+    {
+        await ExpenseService.SetCategoryActiveAsync(category.Id, !category.IsActive);
+        await LoadAsync();
+    }
+
+    private class CategoryForm
+    {
+        [Required]
+        public string Name { get; set; } = "";
+
+        public ExpenseCategoryType Type { get; set; } = ExpenseCategoryType.Other;
+    }
+}
