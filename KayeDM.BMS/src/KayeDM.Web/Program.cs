@@ -6,6 +6,7 @@ using KayeDM.Application.Orders;
 using KayeDM.Infrastructure.Buses;
 using KayeDM.Infrastructure.Data;
 using KayeDM.Infrastructure.Expenses;
+using KayeDM.Infrastructure.Identity;
 using KayeDM.Infrastructure.Inventory;
 using KayeDM.Infrastructure.Menu;
 using KayeDM.Infrastructure.Orders;
@@ -51,6 +52,7 @@ using (var scope = app.Services.CreateScope())
 {
     var expenseService = scope.ServiceProvider.GetRequiredService<IExpenseService>();
     await expenseService.SeedDefaultCategoriesAsync();
+    await IdentitySeeder.SeedAsync(scope.ServiceProvider);
 }
 
 // Configure the HTTP request pipeline.
