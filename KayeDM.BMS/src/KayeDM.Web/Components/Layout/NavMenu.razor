@@ -1,4 +1,6 @@
-﻿<div class="top-row ps-3 navbar navbar-dark">
+@using Microsoft.AspNetCore.Components.Authorization
+
+<div class="top-row ps-3 navbar navbar-dark">
     <div class="container-fluid">
         <a class="navbar-brand" href="">KayeDM.Web</a>
     </div>
@@ -20,17 +22,21 @@
             </NavLink>
         </div>
 
-        <div class="nav-item px-3">
-            <NavLink class="nav-link" href="menu">
-                <span class="bi bi-list-nested-nav-menu" aria-hidden="true"></span> Menu
-            </NavLink>
-        </div>
+        <AuthorizeView Roles="Owner">
+            <div class="nav-item px-3">
+                <NavLink class="nav-link" href="menu">
+                    <span class="bi bi-list-nested-nav-menu" aria-hidden="true"></span> Menu
+                </NavLink>
+            </div>
+        </AuthorizeView>
 
-        <div class="nav-item px-3">
-            <NavLink class="nav-link" href="buses/companies">
-                <span class="bi bi-list-nested-nav-menu" aria-hidden="true"></span> Bus Companies
-            </NavLink>
-        </div>
+        <AuthorizeView Roles="Owner">
+            <div class="nav-item px-3">
+                <NavLink class="nav-link" href="buses/companies">
+                    <span class="bi bi-list-nested-nav-menu" aria-hidden="true"></span> Bus Companies
+                </NavLink>
+            </div>
+        </AuthorizeView>
 
         <div class="nav-item px-3">
             <NavLink class="nav-link" href="buses/arrivals">
@@ -38,11 +44,13 @@
             </NavLink>
         </div>
 
-        <div class="nav-item px-3">
-            <NavLink class="nav-link" href="buses/report">
-                <span class="bi bi-list-nested-nav-menu" aria-hidden="true"></span> Crew Meal Report
-            </NavLink>
-        </div>
+        <AuthorizeView Roles="Owner">
+            <div class="nav-item px-3">
+                <NavLink class="nav-link" href="buses/report">
+                    <span class="bi bi-list-nested-nav-menu" aria-hidden="true"></span> Crew Meal Report
+                </NavLink>
+            </div>
+        </AuthorizeView>
 
         <div class="nav-item px-3">
             <NavLink class="nav-link" href="inventory/production">
@@ -56,28 +64,55 @@
             </NavLink>
         </div>
 
-        <div class="nav-item px-3">
-            <NavLink class="nav-link" href="inventory/variance">
-                <span class="bi bi-list-nested-nav-menu" aria-hidden="true"></span> Variance Report
-            </NavLink>
-        </div>
+        <AuthorizeView Roles="Owner">
+            <div class="nav-item px-3">
+                <NavLink class="nav-link" href="inventory/variance">
+                    <span class="bi bi-list-nested-nav-menu" aria-hidden="true"></span> Variance Report
+                </NavLink>
+            </div>
+        </AuthorizeView>
 
-        <div class="nav-item px-3">
-            <NavLink class="nav-link" href="expenses">
-                <span class="bi bi-list-nested-nav-menu" aria-hidden="true"></span> Expenses
-            </NavLink>
-        </div>
+        <AuthorizeView Roles="Owner">
+            <div class="nav-item px-3">
+                <NavLink class="nav-link" href="expenses">
+                    <span class="bi bi-list-nested-nav-menu" aria-hidden="true"></span> Expenses
+                </NavLink>
+            </div>
+        </AuthorizeView>
 
-        <div class="nav-item px-3">
-            <NavLink class="nav-link" href="expenses/categories">
-                <span class="bi bi-list-nested-nav-menu" aria-hidden="true"></span> Expense Categories
-            </NavLink>
-        </div>
+        <AuthorizeView Roles="Owner">
+            <div class="nav-item px-3">
+                <NavLink class="nav-link" href="expenses/categories">
+                    <span class="bi bi-list-nested-nav-menu" aria-hidden="true"></span> Expense Categories
+                </NavLink>
+            </div>
+        </AuthorizeView>
 
-        <div class="nav-item px-3">
-            <NavLink class="nav-link" href="expenses/report">
-                <span class="bi bi-list-nested-nav-menu" aria-hidden="true"></span> Expense Report
-            </NavLink>
-        </div>
+        <AuthorizeView Roles="Owner">
+            <div class="nav-item px-3">
+                <NavLink class="nav-link" href="expenses/report">
+                    <span class="bi bi-list-nested-nav-menu" aria-hidden="true"></span> Expense Report
+                </NavLink>
+            </div>
+        </AuthorizeView>
+
+        <AuthorizeView>
+            <Authorized>
+                <div class="nav-item px-3">
+                    <span class="nav-link">@context.User.Identity?.Name</span>
+                </div>
+                <div class="nav-item px-3">
+                    <form method="post" action="account/logout">
+                        <AntiforgeryToken />
+                        <button type="submit" class="nav-link btn btn-link">Log Out</button>
+                    </form>
+                </div>
+            </Authorized>
+            <NotAuthorized>
+                <div class="nav-item px-3">
+                    <NavLink class="nav-link" href="account/login">Log In</NavLink>
+                </div>
+            </NotAuthorized>
+        </AuthorizeView>
     </nav>
 </div>

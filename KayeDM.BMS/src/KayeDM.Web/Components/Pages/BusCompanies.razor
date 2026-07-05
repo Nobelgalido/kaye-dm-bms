@@ -1,4 +1,6 @@
 @page "/buses/companies"
+@attribute [Authorize(Roles = "Owner")]
+@using Microsoft.AspNetCore.Authorization
 @using System.ComponentModel.DataAnnotations
 @using KayeDM.Application.Buses
 @inject IBusService BusService

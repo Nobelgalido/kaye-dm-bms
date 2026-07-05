@@ -1,4 +1,6 @@
 @page "/expenses/report"
+@attribute [Authorize(Roles = "Owner")]
+@using Microsoft.AspNetCore.Authorization
 @using KayeDM.Application.Expenses
 @inject IExpenseService ExpenseService
 

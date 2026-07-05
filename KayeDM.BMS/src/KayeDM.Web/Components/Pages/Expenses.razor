@@ -1,4 +1,6 @@
 @page "/expenses"
+@attribute [Authorize(Roles = "Owner")]
+@using Microsoft.AspNetCore.Authorization
 @using System.ComponentModel.DataAnnotations
 @using KayeDM.Application.Expenses
 @using KayeDM.Domain.Enums

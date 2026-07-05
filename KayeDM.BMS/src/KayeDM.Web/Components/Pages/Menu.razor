@@ -1,4 +1,6 @@
 @page "/menu"
+@attribute [Authorize(Roles = "Owner")]
+@using Microsoft.AspNetCore.Authorization
 @using System.ComponentModel.DataAnnotations
 @using KayeDM.Application.Menu
 @using KayeDM.Domain.Enums

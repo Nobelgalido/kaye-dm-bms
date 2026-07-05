@@ -1,4 +1,6 @@
 @page "/buses/arrivals"
+@attribute [Authorize(Roles = "Owner,Cashier")]
+@using Microsoft.AspNetCore.Authorization
 @using System.ComponentModel.DataAnnotations
 @using KayeDM.Application.Buses
 @using KayeDM.Domain.Exceptions

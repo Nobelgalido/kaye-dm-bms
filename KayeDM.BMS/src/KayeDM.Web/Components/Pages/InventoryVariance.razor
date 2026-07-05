@@ -1,4 +1,6 @@
 @page "/inventory/variance"
+@attribute [Authorize(Roles = "Owner")]
+@using Microsoft.AspNetCore.Authorization
 @using KayeDM.Application.Inventory
 @inject IInventoryService InventoryService
 

@@ -1,4 +1,6 @@
 @page "/inventory/waste"
+@attribute [Authorize(Roles = "Owner,Cashier")]
+@using Microsoft.AspNetCore.Authorization
 @using System.ComponentModel.DataAnnotations
 @using KayeDM.Application.Inventory
 @using KayeDM.Domain.Enums

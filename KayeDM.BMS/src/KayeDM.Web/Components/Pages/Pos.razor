@@ -1,4 +1,6 @@
 @page "/pos"
+@attribute [Authorize(Roles = "Owner,Cashier")]
+@using Microsoft.AspNetCore.Authorization
 @using KayeDM.Application.Buses
 @using KayeDM.Application.Inventory
 @using KayeDM.Application.Menu

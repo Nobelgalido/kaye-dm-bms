@@ -1,4 +1,6 @@
 @page "/buses/report"
+@attribute [Authorize(Roles = "Owner")]
+@using Microsoft.AspNetCore.Authorization
 @using KayeDM.Application.Buses
 @using KayeDM.Domain.Exceptions
 @inject IBusService BusService
