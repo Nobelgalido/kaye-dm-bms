@@ -1,0 +1,101 @@
+@page "/inventory/waste"
+@using System.ComponentModel.DataAnnotations
+@using KayeDM.Application.Inventory
+@using KayeDM.Domain.Enums
+@using KayeDM.Domain.Exceptions
+@inject IInventoryService InventoryService
+
+<PageTitle>Waste Log</PageTitle>
+
+<h1>Log Waste</h1>
+
+@if (_batches is null)
+{
+    <p>Loading…</p>
+}
+else if (_batches.Count == 0)
+{
+    <p>No batches logged today — nothing to waste yet.</p>
+}
+else
+{
+    <EditForm Model="_form" OnValidSubmit="SubmitAsync">
+        <DataAnnotationsValidator />
+        <ValidationSummary />
+        <div class="mb-2">
+            <label>Batch</label>
+            <InputSelect class="form-control" @bind-Value="_form.DishBatchId">
+                <option value="0">-- select --</option>
+                @foreach (var batch in _batches)
+                {
+                    <option value="@batch.Id">@batch.MenuItemName (@batch.TraysProduced trays)</option>
+                }
+            </InputSelect>
+        </div>
+        <div class="mb-2">
+            <label>Trays Wasted</label>
+            <InputNumber class="form-control" @bind-Value="_form.TraysWasted" step="0.5" />
+        </div>
+        <div class="mb-2">
+            <label>Reason</label>
+            <InputSelect class="form-control" @bind-Value="_form.Reason">
+                @foreach (var reason in Enum.GetValues<WasteReason>())
+                {
+                    <option value="@reason">@reason</option>
+                }
+            </InputSelect>
+        </div>
+        <button type="submit" class="btn btn-success">Log Waste</button>
+    </EditForm>
+}
+
+@if (_error is not null)
+{
+    <div class="alert alert-danger">@_error</div>
+}
+
+@if (_lastLogged is not null)
+{
+    <div class="alert alert-success">Logged @_lastLogged.TraysWasted tray(s) wasted for @_lastLogged.MenuItemName (@_lastLogged.Reason).</div>
+}
+
+@code {
+    private List<DishBatchDto>? _batches;
+    private WasteForm _form = new();
+    private string? _error;
+    private WasteLogDto? _lastLogged;
+
+    protected override async Task OnInitializedAsync() => _batches = await InventoryService.GetTodaysBatchesAsync();
+
+    private async Task SubmitAsync()
+    {
+        _error = null;
+        _lastLogged = null;
+
+        if (_form.DishBatchId <= 0)
+        {
+            _error = "Select a batch.";
+            return;
+        }
+
+        try
+        {
+            _lastLogged = await InventoryService.LogWasteAsync(new LogWasteRequest(_form.DishBatchId, _form.TraysWasted, _form.Reason));
+            _form = new WasteForm();
+        }
+        catch (DomainException ex)
+        {
+            _error = ex.Message;
+        }
+    }
+
+    private class WasteForm
+    {
+        public int DishBatchId { get; set; }
+
+        [Range(0.5, 100)]
+        public decimal TraysWasted { get; set; } = 0.5m;
+
+        public WasteReason Reason { get; set; } = WasteReason.EndOfDay;
+    }
+}
