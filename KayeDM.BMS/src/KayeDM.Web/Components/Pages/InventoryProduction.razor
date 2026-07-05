@@ -1,0 +1,124 @@
+@page "/inventory/production"
+@using System.ComponentModel.DataAnnotations
+@using KayeDM.Application.Inventory
+@using KayeDM.Application.Menu
+@using KayeDM.Domain.Exceptions
+@inject IInventoryService InventoryService
+@inject IMenuItemService MenuItemService
+
+<PageTitle>Tray Production</PageTitle>
+
+<h1>Today's Tray Production</h1>
+
+<EditForm Model="_form" OnValidSubmit="SubmitAsync">
+    <DataAnnotationsValidator />
+    <ValidationSummary />
+    <div class="mb-2">
+        <label>Dish</label>
+        <InputSelect class="form-control" @bind-Value="_form.MenuItemId">
+            <option value="0">-- select --</option>
+            @foreach (var item in _menuItems)
+            {
+                <option value="@item.Id">@item.Name</option>
+            }
+        </InputSelect>
+    </div>
+    <div class="mb-2">
+        <label>Trays Produced</label>
+        <InputNumber class="form-control" @bind-Value="_form.TraysProduced" step="0.5" />
+    </div>
+    <div class="mb-2">
+        <label>Servings per Tray</label>
+        <InputNumber class="form-control" @bind-Value="_form.ServingsPerTray" />
+    </div>
+    <button type="submit" class="btn btn-success">Log Batch</button>
+</EditForm>
+
+@if (_error is not null)
+{
+    <div class="alert alert-danger">@_error</div>
+}
+
+<h2 class="mt-4">Today's Batches</h2>
+
+@if (_batches is null)
+{
+    <p>Loading…</p>
+}
+else if (_batches.Count == 0)
+{
+    <p>No batches logged today.</p>
+}
+else
+{
+    <table class="table">
+        <thead>
+            <tr>
+                <th>Dish</th>
+                <th>Trays Produced</th>
+                <th>Servings/Tray</th>
+                <th>Total Servings</th>
+                <th>Produced At</th>
+            </tr>
+        </thead>
+        <tbody>
+            @foreach (var batch in _batches)
+            {
+                <tr>
+                    <td>@batch.MenuItemName</td>
+                    <td>@batch.TraysProduced</td>
+                    <td>@batch.ServingsPerTray</td>
+                    <td>@(batch.TraysProduced * batch.ServingsPerTray)</td>
+                    <td>@batch.ProducedAt.ToString("h:mm tt")</td>
+                </tr>
+            }
+        </tbody>
+    </table>
+}
+
+@code {
+    private List<MenuItemDto> _menuItems = new();
+    private List<DishBatchDto>? _batches;
+    private BatchForm _form = new();
+    private string? _error;
+
+    protected override async Task OnInitializedAsync()
+    {
+        _menuItems = await MenuItemService.GetAllAsync();
+        await LoadBatchesAsync();
+    }
+
+    private async Task LoadBatchesAsync() => _batches = await InventoryService.GetTodaysBatchesAsync();
+
+    private async Task SubmitAsync()
+    {
+        _error = null;
+        if (_form.MenuItemId <= 0)
+        {
+            _error = "Select a dish.";
+            return;
+        }
+
+        try
+        {
+            await InventoryService.CreateBatchAsync(new CreateDishBatchRequest(_form.MenuItemId, _form.TraysProduced, _form.ServingsPerTray));
+            _form = new BatchForm();
+            await LoadBatchesAsync();
+        }
+        catch (DomainException ex)
+        {
+            _error = ex.Message;
+        }
+    }
+
+    private class BatchForm
+    {
+        public int MenuItemId { get; set; }
+
+        [Range(0.5, 100)]
+        public decimal TraysProduced { get; set; } = 1m;
+
+        [Range(1, 200)]
+        public int ServingsPerTray { get; set; } = 10;
+    }
+}
