@@ -50,20 +50,119 @@
     </ApexChart>
 }
 
+@if (_insights is { Count: > 0 })
+{
+    <h2>Insights</h2>
+    <ul>
+        @foreach (var insight in _insights)
+        {
+            <li><strong>@insight.Title</strong> — @insight.Detail</li>
+        }
+    </ul>
+}
+
+@if (_expenseBreakdown is not null)
+{
+    <h2>Expense Breakdown — @_breakdownMonth.ToString("MMMM yyyy")</h2>
+    <ApexChart TItem="ExpenseCategoryBreakdownRow" Title="Expense Breakdown">
+        <ApexPointSeries TItem="ExpenseCategoryBreakdownRow" Items="_expenseBreakdown" Name="Amount" SeriesType="SeriesType.Bar"
+            XValue="@(r => r.CategoryName)" YValue="@(r => (decimal?)r.Amount)" />
+    </ApexChart>
+}
+
+<div class="mb-2">
+    <label>Top dishes window</label>
+    <select class="form-control" @bind="_topDishesDays" @bind:after="LoadTopDishesAndWasteAsync">
+        <option value="7">Last 7 days</option>
+        <option value="30">Last 30 days</option>
+    </select>
+</div>
+
+@if (_topDishes is not null)
+{
+    <h2>Top Dishes by Revenue</h2>
+    <ApexChart TItem="TopDishRow" Title="Top Dishes">
+        <ApexPointSeries TItem="TopDishRow" Items="_topDishes" Name="Revenue" SeriesType="SeriesType.Bar"
+            XValue="@(r => r.MenuItemName)" YValue="@(r => (decimal?)r.Revenue)" />
+    </ApexChart>
+}
+
+@if (_wasteByDish is not null)
+{
+    <h2>Waste % by Dish</h2>
+    <ApexChart TItem="WasteByDishRow" Title="Waste % by Dish">
+        <ApexPointSeries TItem="WasteByDishRow" Items="_wasteByDish" Name="Waste %" SeriesType="SeriesType.Bar"
+            XValue="@(r => r.MenuItemName)" YValue="@(r => (decimal?)r.WastePercent)" />
+    </ApexChart>
+}
+
+@if (_busSales is not null)
+{
+    <h2>Sales per Bus Company</h2>
+    <p class="text-muted">"Wave-attributed" sales are a heuristic: unassigned orders completed within ±20 minutes of that company's arrivals — not a confirmed assignment.</p>
+    <table class="table">
+        <thead>
+            <tr><th>Company</th><th>Direct Sales</th><th>Wave-Attributed Sales</th></tr>
+        </thead>
+        <tbody>
+            @foreach (var row in _busSales)
+            {
+                <tr>
+                    <td>@row.CompanyName</td>
+                    <td>@FormatPeso(row.DirectSales) (@row.DirectOrderCount orders)</td>
+                    <td>@FormatPeso(row.WaveAttributedSales) (@row.WaveAttributedOrderCount orders)</td>
+                </tr>
+            }
+        </tbody>
+    </table>
+}
+
+@if (_paymentSplit is not null)
+{
+    <h2>Payment Method Split</h2>
+    <ApexChart TItem="PaymentMethodSplitRow" Title="Payment Method Split">
+        <ApexPointSeries TItem="PaymentMethodSplitRow" Items="_paymentSplit" Name="Amount" SeriesType="SeriesType.Pie"
+            XValue="@(r => r.PaymentMethod)" YValue="@(r => (decimal?)r.Amount)" />
+    </ApexChart>
+}
+
 @code {
     private DateOnly _from = DateOnly.FromDateTime(DateTime.Now.AddDays(-29));
     private DateOnly _to = DateOnly.FromDateTime(DateTime.Now);
+    private DateOnly _breakdownMonth = DateOnly.FromDateTime(DateTime.Now);
+    private int _topDishesDays = 7;
+
     private DashboardKpiDto? _kpis;
     private SalesByHourResult? _salesByHour;
     private List<DailyTrendPoint>? _trend;
+    private List<InsightCallout>? _insights;
+    private List<ExpenseCategoryBreakdownRow>? _expenseBreakdown;
+    private List<TopDishRow>? _topDishes;
+    private List<WasteByDishRow>? _wasteByDish;
+    private List<BusCompanySalesRow>? _busSales;
+    private List<PaymentMethodSplitRow>? _paymentSplit;
 
-    protected override async Task OnInitializedAsync() => await LoadAsync();
+    protected override async Task OnInitializedAsync()
+    {
+        await LoadAsync();
+        await LoadTopDishesAndWasteAsync();
+    }
 
     private async Task LoadAsync()
     {
         _kpis = await DashboardService.GetKpisAsync(_from, _to);
         _salesByHour = await DashboardService.GetSalesByHourAsync(_to);
         _trend = await DashboardService.GetRevenueExpenseTrendAsync(_from, _to);
+        _insights = await DashboardService.GetInsightsAsync(_from, _to);
+        _expenseBreakdown = await DashboardService.GetExpenseBreakdownAsync(_breakdownMonth.Year, _breakdownMonth.Month);
+        _busSales = await DashboardService.GetSalesPerBusCompanyAsync(_from, _to);
+        _paymentSplit = await DashboardService.GetPaymentMethodSplitAsync(_from, _to);
+    }
+
+    private async Task LoadTopDishesAndWasteAsync()
+    {
+        _topDishes = await DashboardService.GetTopDishesAsync(_topDishesDays);
+        _wasteByDish = await DashboardService.GetWasteByDishAsync(_topDishesDays);
     }
 
     private static string FormatPeso(decimal amount) => string.Format("₱{0:N2}", amount);
