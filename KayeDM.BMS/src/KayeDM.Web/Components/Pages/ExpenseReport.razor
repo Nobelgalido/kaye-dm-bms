@@ -7,10 +7,10 @@
 <h1>Monthly Expense Summary</h1>
 
 <div class="mb-3">
-    <label>From (yyyy-MM-dd)</label>
-    <input type="text" class="form-control" placeholder="2026-07-01" @bind="_fromInput" />
-    <label>To (yyyy-MM-dd)</label>
-    <input type="text" class="form-control" placeholder="2026-07-31" @bind="_toInput" />
+    <label>From</label>
+    <input type="date" class="form-control" @bind="_from" />
+    <label>To</label>
+    <input type="date" class="form-control" @bind="_to" />
     <label>Category</label>
     <select class="form-control" @bind="_categoryId">
         <option value="0">-- all --</option>
@@ -75,8 +75,8 @@
 
 @code {
     private List<ExpenseCategoryDto> _categories = new();
-    private string _fromInput = new DateTime(DateTime.Now.Year, DateTime.Now.Month, 1).ToString("yyyy-MM-dd");
-    private string _toInput = DateTime.Now.Date.ToString("yyyy-MM-dd");
+    private DateOnly _from = DateOnly.FromDateTime(new DateTime(DateTime.Now.Year, DateTime.Now.Month, 1));
+    private DateOnly _to = DateOnly.FromDateTime(DateTime.Now);
     private int _categoryId;
     private ExpenseMonthlySummaryResult? _summary;
     private string? _error;
@@ -88,20 +88,14 @@
         _error = null;
         _summary = null;
 
-        if (!DateOnly.TryParse(_fromInput, out var from) || !DateOnly.TryParse(_toInput, out var to))
-        {
-            _error = "Select a valid date range.";
-            return;
-        }
-
-        if (to < from)
+        if (_to < _from)
         {
             _error = "'To' date must be on or after 'From' date.";
             return;
         }
 
         int? categoryId = _categoryId > 0 ? _categoryId : null;
-        _summary = await ExpenseService.GetMonthlySummaryAsync(from, to, categoryId);
+        _summary = await ExpenseService.GetMonthlySummaryAsync(_from, _to, categoryId);
     }
 
     private static string FormatPeso(decimal amount) => string.Format("₱{0:N2}", amount);

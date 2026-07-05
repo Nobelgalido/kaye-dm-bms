@@ -7,11 +7,11 @@
 <h1>Produced / Sold / Wasted Variance</h1>
 
 <div class="mb-3">
-    <label>From (yyyy-MM-dd)</label>
-    <input type="text" class="form-control" placeholder="2026-07-01" @bind="_fromInput" />
+    <label>From</label>
+    <input type="date" class="form-control" @bind="_from" />
 
-    <label>To (yyyy-MM-dd)</label>
-    <input type="text" class="form-control" placeholder="2026-07-31" @bind="_toInput" />
+    <label>To</label>
+    <input type="date" class="form-control" @bind="_to" />
 
     <button class="btn btn-primary mt-2" @onclick="LoadAsync">Run Report</button>
 </div>
@@ -58,8 +58,8 @@
 }
 
 @code {
-    private string _fromInput = DateTime.Now.Date.ToString("yyyy-MM-dd");
-    private string _toInput = DateTime.Now.Date.ToString("yyyy-MM-dd");
+    private DateOnly _from = DateOnly.FromDateTime(DateTime.Now);
+    private DateOnly _to = DateOnly.FromDateTime(DateTime.Now);
     private List<VarianceRow>? _rows;
     private string? _error;
 
@@ -68,18 +68,12 @@
         _error = null;
         _rows = null;
 
-        if (!DateOnly.TryParse(_fromInput, out var from) || !DateOnly.TryParse(_toInput, out var to))
-        {
-            _error = "Select a valid date range.";
-            return;
-        }
-
-        if (to < from)
+        if (_to < _from)
         {
             _error = "'To' date must be on or after 'From' date.";
             return;
         }
 
-        _rows = await InventoryService.GetVarianceAsync(from, to);
+        _rows = await InventoryService.GetVarianceAsync(_from, _to);
     }
 }

@@ -13,8 +13,8 @@
     <DataAnnotationsValidator />
     <ValidationSummary />
     <div class="mb-2">
-        <label>Date (yyyy-MM-dd)</label>
-        <input type="text" class="form-control" placeholder="2026-07-04" @bind="_form.DateInput" />
+        <label>Date</label>
+        <InputDate class="form-control" @bind-Value="_form.Date" />
     </div>
     <div class="mb-2">
         <label>Category</label>
@@ -65,10 +65,10 @@
 
 <h2 class="mt-4">Filter</h2>
 <div class="mb-3">
-    <label>From (yyyy-MM-dd)</label>
-    <input type="text" class="form-control" placeholder="2026-07-01" @bind="_filterFrom" />
-    <label>To (yyyy-MM-dd)</label>
-    <input type="text" class="form-control" placeholder="2026-07-31" @bind="_filterTo" />
+    <label>From</label>
+    <input type="date" class="form-control" @bind="_filterFrom" />
+    <label>To</label>
+    <input type="date" class="form-control" @bind="_filterTo" />
     <label>Category</label>
     <select class="form-control" @bind="_filterCategoryId">
         <option value="0">-- all --</option>
@@ -129,8 +129,8 @@ else
     private int? _editingId;
     private string? _error;
 
-    private string _filterFrom = "";
-    private string _filterTo = "";
+    private DateOnly? _filterFrom;
+    private DateOnly? _filterTo;
     private int _filterCategoryId;
 
     protected override async Task OnInitializedAsync()
@@ -141,11 +141,9 @@ else
 
     private async Task LoadExpensesAsync()
     {
-        DateOnly? from = DateOnly.TryParse(_filterFrom, out var f) ? f : null;
-        DateOnly? to = DateOnly.TryParse(_filterTo, out var t) ? t : null;
         int? categoryId = _filterCategoryId > 0 ? _filterCategoryId : null;
 
-        _expenses = await ExpenseService.GetExpensesAsync(from, to, categoryId);
+        _expenses = await ExpenseService.GetExpensesAsync(_filterFrom, _filterTo, categoryId);
     }
 
     private void StartEdit(ExpenseDto expense)
@@ -153,7 +151,7 @@ else
         _editingId = expense.Id;
         _form = new ExpenseForm
         {
-            DateInput = expense.Date.ToString("yyyy-MM-dd"),
+            Date = DateOnly.FromDateTime(expense.Date),
             ExpenseCategoryId = expense.ExpenseCategoryId,
             Description = expense.Description,
             Amount = expense.Amount,
@@ -179,24 +177,18 @@ else
             return;
         }
 
-        if (!DateOnly.TryParse(_form.DateInput, out var date))
-        {
-            _error = "Select a valid date.";
-            return;
-        }
-
         try
         {
             if (_editingId is null)
             {
                 var request = new CreateExpenseRequest(
-                    date.ToDateTime(TimeOnly.MinValue), _form.ExpenseCategoryId, _form.Description, _form.Amount, _form.PaymentMethod, _form.Vendor, _form.ReceiptRef);
+                    _form.Date.ToDateTime(TimeOnly.MinValue), _form.ExpenseCategoryId, _form.Description, _form.Amount, _form.PaymentMethod, _form.Vendor, _form.ReceiptRef);
                 await ExpenseService.CreateExpenseAsync(request);
             }
             else
             {
                 var request = new UpdateExpenseRequest(
-                    date.ToDateTime(TimeOnly.MinValue), _form.ExpenseCategoryId, _form.Description, _form.Amount, _form.PaymentMethod, _form.Vendor, _form.ReceiptRef);
+                    _form.Date.ToDateTime(TimeOnly.MinValue), _form.ExpenseCategoryId, _form.Description, _form.Amount, _form.PaymentMethod, _form.Vendor, _form.ReceiptRef);
                 await ExpenseService.UpdateExpenseAsync(_editingId.Value, request);
             }
 
@@ -219,7 +211,7 @@ else
 
     private class ExpenseForm
     {
-        public string DateInput { get; set; } = DateTime.Now.Date.ToString("yyyy-MM-dd");
+        public DateOnly Date { get; set; } = DateOnly.FromDateTime(DateTime.Now);
         public int ExpenseCategoryId { get; set; }
 
         [Required]
