@@ -278,4 +278,54 @@ public class SeedDataGenerator
 
         await db.SaveChangesAsync();
     }
+
+    private async Task<List<DishBatch>> SeedDishBatchesForDayAsync(AppDbContext db, DateTime day, List<MenuItem> menuItems)
+    {
+        var batches = new List<DishBatch>();
+
+        foreach (var item in menuItems)
+        {
+            var trays = 2m + (decimal)_random.Next(0, 5) * 0.5m; // 2.0-4.0 trays, half-tray steps
+            var batch = new DishBatch
+            {
+                MenuItemId = item.Id,
+                Date = day.Date,
+                TraysProduced = trays,
+                ServingsPerTray = 8 + _random.Next(0, 5), // 8-12 servings/tray
+                ProducedAt = day.Date.AddHours(6).AddMinutes(_random.Next(0, 60))
+            };
+            batches.Add(batch);
+        }
+
+        db.DishBatches.AddRange(batches);
+        await db.SaveChangesAsync();
+        return batches;
+    }
+
+    private async Task SeedWasteForDayAsync(AppDbContext db, List<DishBatch> batches)
+    {
+        var reasons = Enum.GetValues<WasteReason>();
+
+        foreach (var batch in batches)
+        {
+            var wastePercent = 3m + (decimal)_random.Next(0, 10); // 3-12%
+            var traysWasted = Math.Round(batch.TraysProduced * wastePercent / 100m * 2m, MidpointRounding.AwayFromZero) / 2m; // nearest 0.5 tray
+
+            if (traysWasted <= 0m)
+            {
+                continue;
+            }
+
+            db.WasteLogs.Add(new WasteLog
+            {
+                DishBatchId = batch.Id,
+                TraysWasted = traysWasted,
+                Reason = reasons[_random.Next(reasons.Length)],
+                LoggedAt = batch.Date.AddHours(20),
+                LoggedById = "seed"
+            });
+        }
+
+        await db.SaveChangesAsync();
+    }
 }
