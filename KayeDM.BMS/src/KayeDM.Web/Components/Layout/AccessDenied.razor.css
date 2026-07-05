@@ -1,0 +1,53 @@
+.access-denied {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    min-height: 60vh;
+    padding: var(--s-6);
+}
+
+.access-denied__card {
+    max-width: 420px;
+    text-align: center;
+    background: var(--surface);
+    border: 1px solid var(--line);
+    border-radius: var(--r-md);
+    box-shadow: var(--shadow-1);
+    padding: var(--s-6);
+}
+
+.access-denied__glyph {
+    font-size: 2.5rem;
+    margin-bottom: var(--s-3);
+}
+
+.access-denied__title {
+    font-family: var(--font-display);
+    font-weight: 700;
+    font-size: 1.375rem;
+    color: var(--ink);
+    margin: 0 0 var(--s-2);
+}
+
+.access-denied__message {
+    color: var(--ink-soft);
+    margin: 0 0 var(--s-4);
+}
+
+.access-denied__action {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    height: 40px;
+    padding: 0 var(--s-4);
+    background: var(--route-blue);
+    color: white;
+    text-decoration: none;
+    border-radius: var(--r-sm);
+    font-weight: 600;
+}
+
+.access-denied__action:focus-visible {
+    outline: 2px solid var(--route-blue);
+    outline-offset: 2px;
+}
