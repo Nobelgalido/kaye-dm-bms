@@ -1,0 +1,71 @@
+@page "/closing"
+@attribute [Authorize(Roles = "Owner")]
+@using Microsoft.AspNetCore.Authorization
+@using Microsoft.AspNetCore.Components.Authorization
+@using KayeDM.Application.Closing
+@using KayeDM.Domain.Exceptions
+@inject IClosingService ClosingService
+@inject AuthenticationStateProvider AuthenticationStateProvider
+
+<PageTitle>Daily Closing</PageTitle>
+
+<h1>Daily Closing — @DateTime.Now.ToString("MMM d, yyyy")</h1>
+
+@if (_figures is null)
+{
+    <p>Loading…</p>
+}
+else if (_figures.AlreadyClosed)
+{
+    <div class="alert alert-success">Today has already been closed. No further orders, voids, or expenses can be logged for today or earlier.</div>
+}
+else
+{
+    <table class="table">
+        <tbody>
+            <tr><th>Total Sales</th><td>@FormatPeso(_figures.TotalSales)</td></tr>
+            <tr><th>Cash Sales</th><td>@FormatPeso(_figures.CashSales)</td></tr>
+            <tr><th>GCash Sales</th><td>@FormatPeso(_figures.GCashSales)</td></tr>
+            <tr><th>Order Count</th><td>@_figures.OrderCount</td></tr>
+            <tr><th>Voided Count</th><td>@_figures.VoidedCount</td></tr>
+            <tr><th>Crew Meals Given</th><td>@_figures.CrewMealsGiven</td></tr>
+            <tr><th>Total Expenses</th><td>@FormatPeso(_figures.TotalExpenses)</td></tr>
+            <tr><th>Net For Day</th><td>@FormatPeso(_figures.NetForDay)</td></tr>
+        </tbody>
+    </table>
+
+    <button class="btn btn-danger btn-lg" @onclick="ConfirmCloseAsync">Confirm — Close Today</button>
+}
+
+@if (_error is not null)
+{
+    <div class="alert alert-danger">@_error</div>
+}
+
+@code {
+    private TodaysFiguresDto? _figures;
+    private string? _error;
+
+    protected override async Task OnInitializedAsync() => await LoadAsync();
+
+    private async Task LoadAsync() => _figures = await ClosingService.GetTodaysFiguresAsync();
+
+    private async Task ConfirmCloseAsync()
+    {
+        _error = null;
+        try
+        {
+            var authState = await AuthenticationStateProvider.GetAuthenticationStateAsync();
+            var userId = authState.User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value ?? "unknown";
+
+            await ClosingService.CreateClosingAsync(userId);
+            await LoadAsync();
+        }
+        catch (DomainException ex)
+        {
+            _error = ex.Message;
+        }
+    }
+
+    private static string FormatPeso(decimal amount) => string.Format("₱{0:N2}", amount);
+}
