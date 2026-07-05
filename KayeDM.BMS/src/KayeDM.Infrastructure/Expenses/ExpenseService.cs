@@ -2,6 +2,7 @@ using KayeDM.Application.Expenses;
 using KayeDM.Domain.Entities;
 using KayeDM.Domain.Enums;
 using KayeDM.Domain.Exceptions;
+using KayeDM.Infrastructure.Closing;
 using KayeDM.Infrastructure.Data;
 using Microsoft.EntityFrameworkCore;
 
@@ -89,6 +90,8 @@ public class ExpenseService : IExpenseService
     {
         await using var db = await _dbContextFactory.CreateDbContextAsync();
 
+        await ClosingGuard.EnsureDateNotClosedAsync(db, request.Date.Date, "create an expense");
+
         var category = await db.ExpenseCategories.FirstOrDefaultAsync(c => c.Id == request.ExpenseCategoryId)
             ?? throw new DomainException($"Expense category {request.ExpenseCategoryId} not found.");
 
@@ -122,6 +125,9 @@ public class ExpenseService : IExpenseService
 
         var entity = await db.Expenses.FirstOrDefaultAsync(e => e.Id == id)
             ?? throw new DomainException($"Expense {id} not found.");
+
+        await ClosingGuard.EnsureDateNotClosedAsync(db, entity.Date, "edit this expense");
+        await ClosingGuard.EnsureDateNotClosedAsync(db, request.Date.Date, "edit this expense");
 
         var category = await db.ExpenseCategories.FirstOrDefaultAsync(c => c.Id == request.ExpenseCategoryId)
             ?? throw new DomainException($"Expense category {request.ExpenseCategoryId} not found.");

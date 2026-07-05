@@ -2,6 +2,7 @@ using KayeDM.Application.Orders;
 using KayeDM.Domain.Entities;
 using KayeDM.Domain.Enums;
 using KayeDM.Domain.Exceptions;
+using KayeDM.Infrastructure.Closing;
 using KayeDM.Infrastructure.Data;
 using KayeDM.Infrastructure.Inventory;
 using Microsoft.EntityFrameworkCore;
@@ -20,6 +21,8 @@ public class OrderService : IOrderService
     public async Task<OrderResult> CreateOrderAsync(CreateOrderRequest request)
     {
         await using var db = await _dbContextFactory.CreateDbContextAsync();
+
+        await ClosingGuard.EnsureDateNotClosedAsync(db, DateTime.Now.Date, "create an order");
 
         if (request.Lines is null || request.Lines.Count == 0)
         {
@@ -119,6 +122,8 @@ public class OrderService : IOrderService
     {
         await using var db = await _dbContextFactory.CreateDbContextAsync();
 
+        await ClosingGuard.EnsureDateNotClosedAsync(db, DateTime.Now.Date, "create a crew meal order");
+
         if (request.Lines is null || request.Lines.Count == 0)
         {
             throw new DomainException("A crew meal order must have at least one line.");
@@ -206,6 +211,8 @@ public class OrderService : IOrderService
 
         var order = await db.Orders.FirstOrDefaultAsync(o => o.Id == orderId)
             ?? throw new DomainException($"Order {orderId} not found.");
+
+        await ClosingGuard.EnsureDateNotClosedAsync(db, order.CreatedAt.Date, "void this order");
 
         if (order.Status == OrderStatus.Voided)
         {
