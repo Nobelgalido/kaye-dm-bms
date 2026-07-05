@@ -137,4 +137,106 @@ public class DashboardServiceTests : IDisposable
         breakdown.Should().HaveCount(2);
         breakdown.Single(r => r.CategoryName == "Ingredients").Amount.Should().Be(500m);
     }
+
+    [Fact]
+    public async Task GetTopDishesAsync_RanksByRevenue_OverTheWindow()
+    {
+        _db.Orders.Add(new Order
+        {
+            OrderNumber = "20260705-001", CreatedAt = DateTime.Now, Status = OrderStatus.Completed, PaymentMethod = PaymentMethod.Cash,
+            AmountTendered = 180m, ChangeGiven = 0m,
+            Lines = { new OrderLine { MenuItemId = 1, Quantity = 2, UnitPriceAtSale = 90m } }
+        });
+        _db.SaveChanges();
+
+        var rows = await _sut.GetTopDishesAsync(7);
+
+        rows.Should().ContainSingle();
+        rows[0].Revenue.Should().Be(180m);
+        rows[0].QuantitySold.Should().Be(2);
+    }
+
+    [Fact]
+    public async Task GetWasteByDishAsync_ComputesWastePercent_OverTheWindow()
+    {
+        _db.DishBatches.Add(new DishBatch { Id = 1, MenuItemId = 1, Date = DateTime.Now.Date, TraysProduced = 2m, ServingsPerTray = 10, ProducedAt = DateTime.Now });
+        _db.SaveChanges();
+        _db.WasteLogs.Add(new WasteLog { DishBatchId = 1, TraysWasted = 0.5m, Reason = WasteReason.EndOfDay, LoggedAt = DateTime.Now, LoggedById = "u1" });
+        _db.SaveChanges();
+
+        var rows = await _sut.GetWasteByDishAsync(7);
+
+        rows.Should().ContainSingle();
+        rows[0].Produced.Should().Be(20);
+        rows[0].Wasted.Should().Be(5);
+        rows[0].WastePercent.Should().Be(25m);
+    }
+
+    [Fact]
+    public async Task GetSalesPerBusCompanyAsync_SeparatesDirectFromWaveAttributedSales()
+    {
+        _db.BusCompanies.Add(new BusCompany { Id = 1, Name = "DLTB", CrewMealAllowancePerTrip = 2, IsActive = true });
+        _db.BusTrips.Add(new BusTrip { Id = 1, BusCompanyId = 1, BusNumber = "8112", Route = "Manila-Sorsogon", ArrivedAt = DateTime.Now });
+        _db.SaveChanges();
+
+        _db.Orders.Add(new Order
+        {
+            OrderNumber = "20260705-001", CreatedAt = DateTime.Now, Status = OrderStatus.Completed, PaymentMethod = PaymentMethod.Cash,
+            BusTripId = 1, AmountTendered = 100m, ChangeGiven = 0m,
+            Lines = { new OrderLine { MenuItemId = 1, Quantity = 1, UnitPriceAtSale = 100m } }
+        });
+        _db.Orders.Add(new Order
+        {
+            OrderNumber = "20260705-002", CreatedAt = DateTime.Now.AddMinutes(10), Status = OrderStatus.Completed, PaymentMethod = PaymentMethod.Cash,
+            AmountTendered = 50m, ChangeGiven = 0m,
+            Lines = { new OrderLine { MenuItemId = 1, Quantity = 1, UnitPriceAtSale = 50m } }
+        });
+        _db.Orders.Add(new Order
+        {
+            OrderNumber = "20260705-003", CreatedAt = DateTime.Now.AddMinutes(30), Status = OrderStatus.Completed, PaymentMethod = PaymentMethod.Cash,
+            AmountTendered = 999m, ChangeGiven = 0m,
+            Lines = { new OrderLine { MenuItemId = 1, Quantity = 1, UnitPriceAtSale = 999m } }
+        });
+        _db.SaveChanges();
+
+        var today = _today;
+        var rows = await _sut.GetSalesPerBusCompanyAsync(today, today);
+
+        var dltb = rows.Single(r => r.CompanyName == "DLTB");
+        dltb.DirectSales.Should().Be(100m);
+        dltb.DirectOrderCount.Should().Be(1);
+        dltb.WaveAttributedSales.Should().Be(50m);
+        dltb.WaveAttributedOrderCount.Should().Be(1);
+    }
+
+    [Fact]
+    public async Task GetPaymentMethodSplitAsync_GroupsByMethod()
+    {
+        _db.Orders.AddRange(
+            new Order { OrderNumber = "20260705-001", CreatedAt = DateTime.Now, Status = OrderStatus.Completed, PaymentMethod = PaymentMethod.Cash, AmountTendered = 100m, ChangeGiven = 0m, Lines = { new OrderLine { MenuItemId = 1, Quantity = 1, UnitPriceAtSale = 100m } } },
+            new Order { OrderNumber = "20260705-002", CreatedAt = DateTime.Now, Status = OrderStatus.Completed, PaymentMethod = PaymentMethod.GCash, AmountTendered = 50m, ChangeGiven = 0m, Lines = { new OrderLine { MenuItemId = 1, Quantity = 1, UnitPriceAtSale = 50m } } });
+        _db.SaveChanges();
+
+        var split = await _sut.GetPaymentMethodSplitAsync(_today, _today);
+
+        split.Should().HaveCount(2);
+        split.Single(s => s.PaymentMethod == "Cash").Amount.Should().Be(100m);
+        split.Single(s => s.PaymentMethod == "GCash").Amount.Should().Be(50m);
+    }
+
+    [Fact]
+    public async Task GetInsightsAsync_ReturnsAtLeastOneInsight_WhenTrendDataExists()
+    {
+        _db.Orders.Add(new Order
+        {
+            OrderNumber = "20260705-001", CreatedAt = DateTime.Now, Status = OrderStatus.Completed, PaymentMethod = PaymentMethod.Cash,
+            AmountTendered = 100m, ChangeGiven = 0m,
+            Lines = { new OrderLine { MenuItemId = 1, Quantity = 1, UnitPriceAtSale = 100m } }
+        });
+        _db.SaveChanges();
+
+        var insights = await _sut.GetInsightsAsync(_today, _today);
+
+        insights.Should().NotBeEmpty();
+    }
 }
