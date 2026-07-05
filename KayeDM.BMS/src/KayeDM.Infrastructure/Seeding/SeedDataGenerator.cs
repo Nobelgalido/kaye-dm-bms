@@ -378,7 +378,6 @@ public class SeedDataGenerator
 
         var targetTotal = revenue * targetRatio;
         var marketRun = Math.Max(3000m, targetTotal - fixedCosts);
-        marketRun = Math.Min(marketRun, 6000m + fixedCosts); // keep the daily ingredients line within a plausible range even on negative days
         expenses.Add(NewExpense(categories, ExpenseCategoryType.Ingredients, "Daily market run", marketRun, day));
 
         db.Expenses.AddRange(expenses);
