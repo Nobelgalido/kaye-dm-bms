@@ -1,9 +1,11 @@
 using KayeDM.Application.Buses;
+using KayeDM.Application.Expenses;
 using KayeDM.Application.Inventory;
 using KayeDM.Application.Menu;
 using KayeDM.Application.Orders;
 using KayeDM.Infrastructure.Buses;
 using KayeDM.Infrastructure.Data;
+using KayeDM.Infrastructure.Expenses;
 using KayeDM.Infrastructure.Inventory;
 using KayeDM.Infrastructure.Menu;
 using KayeDM.Infrastructure.Orders;
@@ -20,6 +22,7 @@ builder.Services.AddScoped<IMenuItemService, MenuItemService>();
 builder.Services.AddScoped<IOrderService, OrderService>();
 builder.Services.AddScoped<IBusService, BusService>();
 builder.Services.AddScoped<IInventoryService, InventoryService>();
+builder.Services.AddScoped<IExpenseService, ExpenseService>();
 
 builder.Services.AddRazorComponents()
     .AddInteractiveServerComponents();
