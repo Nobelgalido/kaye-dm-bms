@@ -1,0 +1,235 @@
+@page "/expenses"
+@using System.ComponentModel.DataAnnotations
+@using KayeDM.Application.Expenses
+@using KayeDM.Domain.Enums
+@using KayeDM.Domain.Exceptions
+@inject IExpenseService ExpenseService
+
+<PageTitle>Expenses</PageTitle>
+
+<h1>Expenses</h1>
+
+<EditForm Model="_form" OnValidSubmit="SubmitAsync">
+    <DataAnnotationsValidator />
+    <ValidationSummary />
+    <div class="mb-2">
+        <label>Date (yyyy-MM-dd)</label>
+        <input type="text" class="form-control" placeholder="2026-07-04" @bind="_form.DateInput" />
+    </div>
+    <div class="mb-2">
+        <label>Category</label>
+        <InputSelect class="form-control" @bind-Value="_form.ExpenseCategoryId">
+            <option value="0">-- select --</option>
+            @foreach (var category in _categories)
+            {
+                <option value="@category.Id">@category.Name</option>
+            }
+        </InputSelect>
+    </div>
+    <div class="mb-2">
+        <label>Description</label>
+        <InputText class="form-control" @bind-Value="_form.Description" />
+    </div>
+    <div class="mb-2">
+        <label>Amount</label>
+        <InputNumber class="form-control" @bind-Value="_form.Amount" step="0.01" />
+    </div>
+    <div class="mb-2">
+        <label>Payment Method</label>
+        <InputSelect class="form-control" @bind-Value="_form.PaymentMethod">
+            @foreach (var method in Enum.GetValues<ExpensePaymentMethod>())
+            {
+                <option value="@method">@method</option>
+            }
+        </InputSelect>
+    </div>
+    <div class="mb-2">
+        <label>Vendor (optional)</label>
+        <InputText class="form-control" @bind-Value="_form.Vendor" />
+    </div>
+    <div class="mb-2">
+        <label>Receipt Ref (optional)</label>
+        <InputText class="form-control" @bind-Value="_form.ReceiptRef" />
+    </div>
+    <button type="submit" class="btn btn-success">@(_editingId is null ? "Add Expense" : "Save Changes")</button>
+    @if (_editingId is not null)
+    {
+        <button type="button" class="btn btn-link" @onclick="CancelEdit">Cancel</button>
+    }
+</EditForm>
+
+@if (_error is not null)
+{
+    <div class="alert alert-danger">@_error</div>
+}
+
+<h2 class="mt-4">Filter</h2>
+<div class="mb-3">
+    <label>From (yyyy-MM-dd)</label>
+    <input type="text" class="form-control" placeholder="2026-07-01" @bind="_filterFrom" />
+    <label>To (yyyy-MM-dd)</label>
+    <input type="text" class="form-control" placeholder="2026-07-31" @bind="_filterTo" />
+    <label>Category</label>
+    <select class="form-control" @bind="_filterCategoryId">
+        <option value="0">-- all --</option>
+        @foreach (var category in _categories)
+        {
+            <option value="@category.Id">@category.Name</option>
+        }
+    </select>
+    <button class="btn btn-primary mt-2" @onclick="LoadExpensesAsync">Filter</button>
+</div>
+
+@if (_expenses is null)
+{
+    <p>Loading…</p>
+}
+else if (_expenses.Count == 0)
+{
+    <p>No expenses match this filter.</p>
+}
+else
+{
+    <table class="table">
+        <thead>
+            <tr>
+                <th>Date</th>
+                <th>Category</th>
+                <th>Description</th>
+                <th>Amount</th>
+                <th>Method</th>
+                <th>Vendor</th>
+                <th></th>
+            </tr>
+        </thead>
+        <tbody>
+            @foreach (var expense in _expenses)
+            {
+                <tr>
+                    <td>@expense.Date.ToString("MMM d, yyyy")</td>
+                    <td>@expense.CategoryName</td>
+                    <td>@expense.Description</td>
+                    <td>@FormatPeso(expense.Amount)</td>
+                    <td>@expense.PaymentMethod</td>
+                    <td>@expense.Vendor</td>
+                    <td>
+                        <button class="btn btn-sm btn-secondary" @onclick="() => StartEdit(expense)">Edit</button>
+                        <button class="btn btn-sm btn-outline-danger" @onclick="() => DeleteAsync(expense.Id)">Delete</button>
+                    </td>
+                </tr>
+            }
+        </tbody>
+    </table>
+}
+
+@code {
+    private List<ExpenseCategoryDto> _categories = new();
+    private List<ExpenseDto>? _expenses;
+    private ExpenseForm _form = new();
+    private int? _editingId;
+    private string? _error;
+
+    private string _filterFrom = "";
+    private string _filterTo = "";
+    private int _filterCategoryId;
+
+    protected override async Task OnInitializedAsync()
+    {
+        _categories = await ExpenseService.GetCategoriesAsync();
+        await LoadExpensesAsync();
+    }
+
+    private async Task LoadExpensesAsync()
+    {
+        DateOnly? from = DateOnly.TryParse(_filterFrom, out var f) ? f : null;
+        DateOnly? to = DateOnly.TryParse(_filterTo, out var t) ? t : null;
+        int? categoryId = _filterCategoryId > 0 ? _filterCategoryId : null;
+
+        _expenses = await ExpenseService.GetExpensesAsync(from, to, categoryId);
+    }
+
+    private void StartEdit(ExpenseDto expense)
+    {
+        _editingId = expense.Id;
+        _form = new ExpenseForm
+        {
+            DateInput = expense.Date.ToString("yyyy-MM-dd"),
+            ExpenseCategoryId = expense.ExpenseCategoryId,
+            Description = expense.Description,
+            Amount = expense.Amount,
+            PaymentMethod = expense.PaymentMethod,
+            Vendor = expense.Vendor,
+            ReceiptRef = expense.ReceiptRef
+        };
+    }
+
+    private void CancelEdit()
+    {
+        _editingId = null;
+        _form = new ExpenseForm();
+    }
+
+    private async Task SubmitAsync()
+    {
+        _error = null;
+
+        if (_form.ExpenseCategoryId <= 0)
+        {
+            _error = "Select a category.";
+            return;
+        }
+
+        if (!DateOnly.TryParse(_form.DateInput, out var date))
+        {
+            _error = "Select a valid date.";
+            return;
+        }
+
+        try
+        {
+            if (_editingId is null)
+            {
+                var request = new CreateExpenseRequest(
+                    date.ToDateTime(TimeOnly.MinValue), _form.ExpenseCategoryId, _form.Description, _form.Amount, _form.PaymentMethod, _form.Vendor, _form.ReceiptRef);
+                await ExpenseService.CreateExpenseAsync(request);
+            }
+            else
+            {
+                var request = new UpdateExpenseRequest(
+                    date.ToDateTime(TimeOnly.MinValue), _form.ExpenseCategoryId, _form.Description, _form.Amount, _form.PaymentMethod, _form.Vendor, _form.ReceiptRef);
+                await ExpenseService.UpdateExpenseAsync(_editingId.Value, request);
+            }
+
+            CancelEdit();
+            await LoadExpensesAsync();
+        }
+        catch (DomainException ex)
+        {
+            _error = ex.Message;
+        }
+    }
+
+    private async Task DeleteAsync(int id)
+    {
+        await ExpenseService.DeleteExpenseAsync(id);
+        await LoadExpensesAsync();
+    }
+
+    private static string FormatPeso(decimal amount) => string.Format("₱{0:N2}", amount);
+
+    private class ExpenseForm
+    {
+        public string DateInput { get; set; } = DateTime.Now.Date.ToString("yyyy-MM-dd");
+        public int ExpenseCategoryId { get; set; }
+
+        [Required]
+        public string Description { get; set; } = "";
+
+        [Range(0.01, 10_000_000)]
+        public decimal Amount { get; set; }
+
+        public ExpensePaymentMethod PaymentMethod { get; set; } = ExpensePaymentMethod.Cash;
+        public string? Vendor { get; set; }
+        public string? ReceiptRef { get; set; }
+    }
+}
