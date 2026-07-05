@@ -328,4 +328,122 @@ public class SeedDataGenerator
 
         await db.SaveChangesAsync();
     }
+
+    private async Task SeedExpensesForDayAsync(AppDbContext db, DateTime day)
+    {
+        var dayStart = day.Date;
+        var dayEnd = dayStart.AddDays(1);
+
+        var revenue = await db.Orders
+            .Where(o => o.CreatedAt >= dayStart && o.CreatedAt < dayEnd && o.Status == OrderStatus.Completed)
+            .SumAsync(o => (decimal?)(o.AmountTendered - o.ChangeGiven)) ?? 0m;
+
+        var categories = await db.ExpenseCategories.ToDictionaryAsync(c => c.Type);
+        var expenses = new List<Expense>();
+        decimal fixedCosts = 0m;
+
+        if (day.DayOfWeek == DayOfWeek.Monday)
+        {
+            var wages = 8000m + (decimal)_random.Next(0, 2000);
+            fixedCosts += wages;
+            expenses.Add(NewExpense(categories, ExpenseCategoryType.Wages, "Weekly staff wages", wages, day));
+        }
+
+        if (day.Day == 1)
+        {
+            var rent = 15000m + (decimal)_random.Next(0, 3000);
+            fixedCosts += rent;
+            expenses.Add(NewExpense(categories, ExpenseCategoryType.Rent, "Monthly stall rent", rent, day));
+        }
+
+        if (day.Day == 1 || day.Day == 15)
+        {
+            var utilities = 2000m + (decimal)_random.Next(0, 1500);
+            fixedCosts += utilities;
+            expenses.Add(NewExpense(categories, ExpenseCategoryType.Utilities, "Electricity and water", utilities, day));
+        }
+
+        if (_random.NextDouble() < 0.15)
+        {
+            var extra = 500m + (decimal)_random.Next(0, 1500);
+            fixedCosts += extra;
+            var type = _random.NextDouble() < 0.5 ? ExpenseCategoryType.Supplies : ExpenseCategoryType.Maintenance;
+            expenses.Add(NewExpense(categories, type, type == ExpenseCategoryType.Supplies ? "Disposables restock" : "Equipment repair", extra, day));
+        }
+
+        var isNegativeDay = _negativeDays.Contains(day.Date);
+        var targetRatio = isNegativeDay
+            ? 1.1m + (decimal)_random.Next(0, 20) / 100m  // 110%-130% of revenue
+            : 0.65m + (decimal)_random.Next(0, 11) / 100m; // 65%-75% of revenue
+
+        var targetTotal = revenue * targetRatio;
+        var marketRun = Math.Max(3000m, targetTotal - fixedCosts);
+        marketRun = Math.Min(marketRun, 6000m + fixedCosts); // keep the daily ingredients line within a plausible range even on negative days
+        expenses.Add(NewExpense(categories, ExpenseCategoryType.Ingredients, "Daily market run", marketRun, day));
+
+        db.Expenses.AddRange(expenses);
+        await db.SaveChangesAsync();
+    }
+
+    private static Expense NewExpense(Dictionary<ExpenseCategoryType, ExpenseCategory> categories, ExpenseCategoryType type, string description, decimal amount, DateTime day)
+    {
+        return new Expense
+        {
+            Date = day.Date,
+            ExpenseCategoryId = categories[type].Id,
+            Description = description,
+            Amount = Math.Round(amount, 2),
+            PaymentMethod = ExpensePaymentMethod.Cash,
+            LoggedById = "seed",
+            LoggedAt = day.Date.AddHours(20)
+        };
+    }
+
+    private static async Task SeedClosingForDayAsync(AppDbContext db, DateTime day)
+    {
+        var dayStart = day.Date;
+        var dayEnd = dayStart.AddDays(1);
+
+        // Narrow projection — only the columns actually used below, never
+        // whole Order entities.
+        var completedOrders = await db.Orders
+            .Where(o => o.CreatedAt >= dayStart && o.CreatedAt < dayEnd && o.Status == OrderStatus.Completed)
+            .Select(o => new { o.AmountTendered, o.ChangeGiven, o.PaymentMethod, o.IsCrewMeal })
+            .ToListAsync();
+        var voidedCount = await db.Orders
+            .CountAsync(o => o.CreatedAt >= dayStart && o.CreatedAt < dayEnd && o.Status == OrderStatus.Voided);
+
+        // Materialize the narrow projection, then sum client-side —
+        // consistent with ClosingService and DashboardService. This is
+        // forced by a SQLite test-provider limitation (it can't translate
+        // SUM over decimal into SQL) — not a stylistic choice. This method
+        // only ever runs against SQL Server, but keeping the pattern
+        // consistent avoids surprises if it's ever unit tested.
+        var dayExpenseAmounts = await db.Expenses
+            .Where(e => e.Date >= dayStart && e.Date < dayEnd)
+            .Select(e => e.Amount)
+            .ToListAsync();
+        var totalExpenses = dayExpenseAmounts.Sum();
+
+        var totalSales = completedOrders.Sum(o => o.AmountTendered - o.ChangeGiven);
+        var cashSales = completedOrders.Where(o => o.PaymentMethod == PaymentMethod.Cash).Sum(o => o.AmountTendered - o.ChangeGiven);
+        var gcashSales = completedOrders.Where(o => o.PaymentMethod == PaymentMethod.GCash).Sum(o => o.AmountTendered - o.ChangeGiven);
+
+        db.DailyClosings.Add(new DailyClosing
+        {
+            Date = dayStart,
+            TotalSales = totalSales,
+            CashSales = cashSales,
+            GCashSales = gcashSales,
+            OrderCount = completedOrders.Count,
+            VoidedCount = voidedCount,
+            CrewMealsGiven = completedOrders.Count(o => o.IsCrewMeal),
+            TotalExpenses = totalExpenses,
+            NetForDay = totalSales - totalExpenses,
+            ClosedById = "seed",
+            ClosedAt = dayStart.AddHours(21)
+        });
+
+        await db.SaveChangesAsync();
+    }
 }
