@@ -143,7 +143,11 @@ Continuing **Kaye & DM BMS** (blueprint attached). Weeks 1–3 complete: POS wit
 
 ## Current state (do not redo)
 
-All prior deliverables; migration history: InitialCreate, AddOrderTables, AddBusCompanyAndTrip, AddCrewMealCredit, LinkOrderToBusTrip, AddDishBatch, AddWasteLog, AddOversoldFlag, AddExpenseTables. Identity package installed but not wired. Packages pinned 8.0.11.
+All prior deliverables; migration history (9 total, confirmed applied via `dotnet ef migrations list`): InitialCreate, AddOrderTables, AddBusCompanyAndTrip, AddCrewMealCredit, LinkOrderToBusTrip, AddDishBatch, AddWasteLog, AddOversoldFlag, AddExpenseTables. Identity package installed but not wired. Packages pinned 8.0.11.
+
+`WasteLog.LoggedById` and `Expense.LoggedById` are plain strings hardcoded to `"system"` by their services — both marked `// TODO Week 4`, waiting on Identity wiring (Week 4 scope item 4 below).
+
+Date-input rule for Blazor `@bind` on native `<input>` elements: `type="date"`/`"time"`/`"datetime-local"` bind cleanly to `DateOnly`/`TimeOnly`/`DateTime` (or use `<InputDate>` inside an `EditForm`) — don't fall back to free-text string inputs for these. Only `type="month"` lacks built-in Blazor binding support and genuinely needs the text-input workaround (see `/buses/report`).
 
 ## Scope — ONLY this
 
