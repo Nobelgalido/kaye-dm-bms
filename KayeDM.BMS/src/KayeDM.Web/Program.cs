@@ -1,11 +1,13 @@
 using KayeDM.Application.Buses;
 using KayeDM.Application.Closing;
+using KayeDM.Application.Dashboard;
 using KayeDM.Application.Expenses;
 using KayeDM.Application.Inventory;
 using KayeDM.Application.Menu;
 using KayeDM.Application.Orders;
 using KayeDM.Infrastructure.Buses;
 using KayeDM.Infrastructure.Closing;
+using KayeDM.Infrastructure.Dashboard;
 using KayeDM.Infrastructure.Data;
 using KayeDM.Infrastructure.Expenses;
 using KayeDM.Infrastructure.Identity;
@@ -29,6 +31,7 @@ builder.Services.AddScoped<IBusService, BusService>();
 builder.Services.AddScoped<IInventoryService, InventoryService>();
 builder.Services.AddScoped<IExpenseService, ExpenseService>();
 builder.Services.AddScoped<IClosingService, ClosingService>();
+builder.Services.AddScoped<IDashboardService, DashboardService>();
 builder.Services.AddApexCharts();
 
 builder.Services.AddCascadingAuthenticationState();
