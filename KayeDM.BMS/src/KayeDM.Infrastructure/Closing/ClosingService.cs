@@ -23,15 +23,19 @@ public class ClosingService : IClosingService
         var today = DateTime.Now.Date;
         var tomorrow = today.AddDays(1);
 
+        // Project only the columns this method actually uses — never pull
+        // whole Order entities just to sum/count a handful of fields.
         var completedOrders = await db.Orders
             .Where(o => o.CreatedAt >= today && o.CreatedAt < tomorrow && o.Status == OrderStatus.Completed)
+            .Select(o => new { o.AmountTendered, o.ChangeGiven, o.PaymentMethod, o.IsCrewMeal })
             .ToListAsync();
 
         var voidedCount = await db.Orders
             .CountAsync(o => o.CreatedAt >= today && o.CreatedAt < tomorrow && o.Status == OrderStatus.Voided);
 
-        // Materialize then sum client-side — the SQLite EF Core provider
-        // (used by tests) can't translate SUM over decimal into SQL.
+        // Materialize the narrow projection, then sum client-side. This is
+        // forced by a SQLite test-provider limitation (it can't translate
+        // SUM over decimal into SQL) — not a stylistic choice.
         var todaysExpenseAmounts = await db.Expenses
             .Where(e => e.Date >= today && e.Date < tomorrow)
             .Select(e => e.Amount)

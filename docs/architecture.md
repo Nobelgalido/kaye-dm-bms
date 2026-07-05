@@ -1,0 +1,5 @@
+# Architecture Decisions
+
+ADR-lite bullets — short decision + rationale, not full ADR documents. Expanded further in Week 5 (layering diagram, remaining decisions).
+
+- **Client-side aggregation for decimal sums in EF Core queries.** `ClosingService` and `DashboardService` never call `.SumAsync()` or `GroupBy(...).Select(g => g.Sum(...))` directly against `IQueryable<T>` when the summed column is `decimal`. Instead, every such query first does the `Where` filter and a narrow `Select` projection (only the columns actually needed) in SQL, materializes with `.ToListAsync()`, then sums/groups client-side with LINQ-to-Objects. Reason: the SQLite EF Core provider (used by the xUnit test suite) cannot translate `SUM` over `decimal` into SQL and throws `NotSupportedException` — SQL Server supports it fine, so this only surfaces in tests, not production. Keeping the pattern consistent between test and production code paths (rather than only fixing what SQLite complains about) avoids the query behaving differently depending on provider, and the narrow projection keeps the client-side materialization cheap even though it's no longer a pure server-side aggregate.
