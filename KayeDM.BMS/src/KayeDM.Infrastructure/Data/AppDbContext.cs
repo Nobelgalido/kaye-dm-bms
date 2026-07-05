@@ -38,6 +38,7 @@ public class AppDbContext : IdentityDbContext<IdentityUser>
             entity.Property(o => o.AmountTendered).HasPrecision(10, 2);
             entity.Property(o => o.ChangeGiven).HasPrecision(10, 2);
             entity.Property(o => o.VoidReason).HasMaxLength(250);
+            entity.Property(o => o.OversoldOverride).HasDefaultValue(false);
 
             entity.HasMany(o => o.Lines)
                 .WithOne(l => l.Order)
