@@ -1,0 +1,15 @@
+<div class="page-header">
+    <h1 class="page-header__title">@Title</h1>
+    @if (ActionContent is not null)
+    {
+        <div class="page-header__actions">@ActionContent</div>
+    }
+</div>
+
+@code {
+    [Parameter, EditorRequired]
+    public string Title { get; set; } = "";
+
+    [Parameter]
+    public RenderFragment? ActionContent { get; set; }
+}

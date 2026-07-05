@@ -7,9 +7,9 @@
 @inject IClosingService ClosingService
 @inject AuthenticationStateProvider AuthenticationStateProvider
 
-<PageTitle>Daily Closing</PageTitle>
+<PageTitle>Daily Closing — Kaye & DM BMS</PageTitle>
 
-<h1>Daily Closing — @DateTime.Now.ToString("MMM d, yyyy")</h1>
+<PageHeader Title="@($"Daily Closing — {DateTime.Now:MMM d, yyyy}")" />
 
 @if (_figures is null)
 {
