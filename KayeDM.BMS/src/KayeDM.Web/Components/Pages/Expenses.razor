@@ -5,7 +5,9 @@
 @using KayeDM.Application.Expenses
 @using KayeDM.Domain.Enums
 @using KayeDM.Domain.Exceptions
+@using Microsoft.AspNetCore.Components.Authorization
 @inject IExpenseService ExpenseService
+@inject AuthenticationStateProvider AuthenticationStateProvider
 
 <PageTitle>Expenses</PageTitle>
 
@@ -183,8 +185,11 @@ else
         {
             if (_editingId is null)
             {
+                var authState = await AuthenticationStateProvider.GetAuthenticationStateAsync();
+                var userId = authState.User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value ?? "unknown";
+
                 var request = new CreateExpenseRequest(
-                    _form.Date.ToDateTime(TimeOnly.MinValue), _form.ExpenseCategoryId, _form.Description, _form.Amount, _form.PaymentMethod, _form.Vendor, _form.ReceiptRef);
+                    _form.Date.ToDateTime(TimeOnly.MinValue), _form.ExpenseCategoryId, _form.Description, _form.Amount, _form.PaymentMethod, _form.Vendor, _form.ReceiptRef, userId);
                 await ExpenseService.CreateExpenseAsync(request);
             }
             else

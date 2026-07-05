@@ -13,7 +13,8 @@ public record CreateExpenseRequest(
     decimal Amount,
     ExpensePaymentMethod PaymentMethod,
     string? Vendor,
-    string? ReceiptRef);
+    string? ReceiptRef,
+    string LoggedById);
 
 public record UpdateExpenseRequest(
     DateTime Date,

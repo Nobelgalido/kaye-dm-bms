@@ -13,7 +13,7 @@ public record DishBatchDto(
     int ServingsPerTray,
     DateTime ProducedAt);
 
-public record LogWasteRequest(int DishBatchId, decimal TraysWasted, WasteReason Reason);
+public record LogWasteRequest(int DishBatchId, decimal TraysWasted, WasteReason Reason, string LoggedById);
 
 public record WasteLogDto(
     int Id,

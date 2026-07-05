@@ -79,7 +79,7 @@ public class InventoryService : IInventoryService
             TraysWasted = request.TraysWasted,
             Reason = request.Reason,
             LoggedAt = DateTime.Now,
-            LoggedById = "system"
+            LoggedById = request.LoggedById
         };
 
         db.WasteLogs.Add(log);

@@ -5,7 +5,9 @@
 @using KayeDM.Application.Inventory
 @using KayeDM.Domain.Enums
 @using KayeDM.Domain.Exceptions
+@using Microsoft.AspNetCore.Components.Authorization
 @inject IInventoryService InventoryService
+@inject AuthenticationStateProvider AuthenticationStateProvider
 
 <PageTitle>Waste Log</PageTitle>
 
@@ -82,7 +84,10 @@ else
 
         try
         {
-            _lastLogged = await InventoryService.LogWasteAsync(new LogWasteRequest(_form.DishBatchId, _form.TraysWasted, _form.Reason));
+            var authState = await AuthenticationStateProvider.GetAuthenticationStateAsync();
+            var userId = authState.User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value ?? "unknown";
+
+            _lastLogged = await InventoryService.LogWasteAsync(new LogWasteRequest(_form.DishBatchId, _form.TraysWasted, _form.Reason, userId));
             _form = new WasteForm();
         }
         catch (DomainException ex)

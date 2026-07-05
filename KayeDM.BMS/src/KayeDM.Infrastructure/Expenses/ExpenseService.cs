@@ -106,7 +106,7 @@ public class ExpenseService : IExpenseService
             PaymentMethod = request.PaymentMethod,
             Vendor = request.Vendor,
             ReceiptRef = request.ReceiptRef,
-            LoggedById = "system",
+            LoggedById = request.LoggedById,
             LoggedAt = DateTime.Now
         };
 
