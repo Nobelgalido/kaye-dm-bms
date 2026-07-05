@@ -10,6 +10,7 @@ using KayeDM.Infrastructure.Inventory;
 using KayeDM.Infrastructure.Menu;
 using KayeDM.Infrastructure.Orders;
 using KayeDM.Web.Components;
+using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -23,6 +24,23 @@ builder.Services.AddScoped<IOrderService, OrderService>();
 builder.Services.AddScoped<IBusService, BusService>();
 builder.Services.AddScoped<IInventoryService, InventoryService>();
 builder.Services.AddScoped<IExpenseService, ExpenseService>();
+
+builder.Services.AddCascadingAuthenticationState();
+
+builder.Services.AddAuthentication(options =>
+{
+    options.DefaultScheme = IdentityConstants.ApplicationScheme;
+    options.DefaultSignInScheme = IdentityConstants.ExternalScheme;
+})
+    .AddIdentityCookies();
+
+builder.Services.AddAuthorizationCore();
+
+builder.Services.AddIdentityCore<IdentityUser>(options => options.SignIn.RequireConfirmedAccount = false)
+    .AddRoles<IdentityRole>()
+    .AddEntityFrameworkStores<AppDbContext>()
+    .AddSignInManager()
+    .AddDefaultTokenProviders();
 
 builder.Services.AddRazorComponents()
     .AddInteractiveServerComponents();
@@ -46,6 +64,8 @@ if (!app.Environment.IsDevelopment())
 app.UseHttpsRedirection();
 
 app.UseStaticFiles();
+app.UseAuthentication();
+app.UseAuthorization();
 app.UseAntiforgery();
 
 app.MapRazorComponents<App>()
