@@ -1,0 +1,125 @@
+using FluentAssertions;
+using KayeDM.Domain.Entities;
+using KayeDM.Domain.Enums;
+using KayeDM.Infrastructure.Closing;
+using KayeDM.Infrastructure.Data;
+using Microsoft.Data.Sqlite;
+using Microsoft.EntityFrameworkCore;
+
+namespace KayeDM.Tests.Closing;
+
+public class ClosingServiceTests : IDisposable
+{
+    private readonly SqliteConnection _connection;
+    private readonly AppDbContext _db;
+    private readonly ClosingService _sut;
+    private readonly DateTime _today = DateTime.Now.Date;
+
+    public ClosingServiceTests()
+    {
+        _connection = new SqliteConnection("Filename=:memory:");
+        _connection.Open();
+
+        var options = new DbContextOptionsBuilder<AppDbContext>()
+            .UseSqlite(_connection)
+            .Options;
+
+        _db = new AppDbContext(options);
+        _db.Database.EnsureCreated();
+        _sut = new ClosingService(new TestDbContextFactory(options));
+
+        _db.MenuItems.Add(new MenuItem { Id = 1, Name = "Adobo", Category = MenuCategory.Ulam, Price = 90m, IsActive = true, SortOrder = 1 });
+        _db.SaveChanges();
+    }
+
+    public void Dispose()
+    {
+        _db.Dispose();
+        _connection.Dispose();
+    }
+
+    private sealed class TestDbContextFactory : IDbContextFactory<AppDbContext>
+    {
+        private readonly DbContextOptions<AppDbContext> _options;
+
+        public TestDbContextFactory(DbContextOptions<AppDbContext> options)
+        {
+            _options = options;
+        }
+
+        public AppDbContext CreateDbContext() => new(_options);
+
+        public Task<AppDbContext> CreateDbContextAsync(CancellationToken cancellationToken = default)
+            => Task.FromResult(new AppDbContext(_options));
+    }
+
+    [Fact]
+    public async Task GetTodaysFiguresAsync_ComputesNetForDay_FromSalesMinusExpenses()
+    {
+        _db.Orders.Add(new Order
+        {
+            OrderNumber = "20260705-001",
+            CreatedAt = DateTime.Now,
+            Status = OrderStatus.Completed,
+            PaymentMethod = PaymentMethod.Cash,
+            AmountTendered = 100m,
+            ChangeGiven = 10m,
+            Lines = { new OrderLine { MenuItemId = 1, Quantity = 1, UnitPriceAtSale = 90m } }
+        });
+        _db.ExpenseCategories.Add(new ExpenseCategory { Id = 1, Name = "Ingredients", Type = ExpenseCategoryType.Ingredients, IsActive = true });
+        _db.SaveChanges();
+        _db.Expenses.Add(new Expense { Date = _today, ExpenseCategoryId = 1, Description = "Rice", Amount = 30m, PaymentMethod = ExpensePaymentMethod.Cash, LoggedById = "u1", LoggedAt = DateTime.Now });
+        _db.SaveChanges();
+
+        var figures = await _sut.GetTodaysFiguresAsync();
+
+        figures.TotalSales.Should().Be(90m);
+        figures.TotalExpenses.Should().Be(30m);
+        figures.NetForDay.Should().Be(60m);
+    }
+
+    [Fact]
+    public async Task CreateClosingAsync_PersistsSnapshot_MatchingTodaysFigures()
+    {
+        _db.Orders.Add(new Order
+        {
+            OrderNumber = "20260705-001",
+            CreatedAt = DateTime.Now,
+            Status = OrderStatus.Completed,
+            PaymentMethod = PaymentMethod.Cash,
+            AmountTendered = 90m,
+            ChangeGiven = 0m,
+            Lines = { new OrderLine { MenuItemId = 1, Quantity = 1, UnitPriceAtSale = 90m } }
+        });
+        _db.SaveChanges();
+
+        var closing = await _sut.CreateClosingAsync("owner-1");
+
+        closing.TotalSales.Should().Be(90m);
+        closing.ClosedById.Should().Be("owner-1");
+    }
+
+    [Fact]
+    public async Task CreateClosingAsync_Throws_WhenTodayAlreadyClosed()
+    {
+        await _sut.CreateClosingAsync("owner-1");
+
+        var act = async () => await _sut.CreateClosingAsync("owner-1");
+
+        await act.Should().ThrowAsync<KayeDM.Domain.Exceptions.DomainException>();
+    }
+
+    [Fact]
+    public async Task IsDateClosedAsync_ReturnsTrue_ForDatesOnOrBeforeAClosing()
+    {
+        await _sut.CreateClosingAsync("owner-1");
+
+        var todayClosed = await _sut.IsDateClosedAsync(DateOnly.FromDateTime(_today));
+        var yesterdayClosed = await _sut.IsDateClosedAsync(DateOnly.FromDateTime(_today.AddDays(-1)));
+        var tomorrowClosed = await _sut.IsDateClosedAsync(DateOnly.FromDateTime(_today.AddDays(1)));
+
+        todayClosed.Should().BeTrue();
+        yesterdayClosed.Should().BeTrue();
+        tomorrowClosed.Should().BeFalse();
+    }
+}
