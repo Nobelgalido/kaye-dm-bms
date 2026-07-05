@@ -1,0 +1,70 @@
+@page "/dashboard"
+@attribute [Authorize(Roles = "Owner")]
+@using Microsoft.AspNetCore.Authorization
+@using KayeDM.Application.Dashboard
+@inject IDashboardService DashboardService
+
+<PageTitle>Dashboard</PageTitle>
+
+<h1>Analytics Dashboard</h1>
+
+<div class="mb-3">
+    <label>From</label>
+    <input type="date" class="form-control" @bind="_from" @bind:after="LoadAsync" />
+    <label>To</label>
+    <input type="date" class="form-control" @bind="_to" @bind:after="LoadAsync" />
+</div>
+
+@if (_kpis is not null)
+{
+    <div class="dashboard-kpi-row">
+        <div>Sales: @FormatPeso(_kpis.TotalSales)</div>
+        <div>Expenses: @FormatPeso(_kpis.TotalExpenses)</div>
+        <div>Net Profit: @FormatPeso(_kpis.NetProfit)</div>
+        <div>Orders: @_kpis.OrderCount</div>
+        <div>Avg Ticket: @FormatPeso(_kpis.AverageTicket)</div>
+        <div>Crew Meals: @_kpis.CrewMealsGiven (est. @FormatPeso(_kpis.CrewMealsEstimatedCost))</div>
+    </div>
+}
+
+@if (_salesByHour is not null)
+{
+    <h2>Sales by Hour — @_salesByHour.Date.ToString("MMM d, yyyy")</h2>
+    <p class="text-muted">Bus arrival markers: @string.Join(", ", _salesByHour.Arrivals.Select(a => $"{a.CompanyName} {a.ArrivedAt:h:mm tt}"))</p>
+    <ApexChart TItem="HourlySalesPoint" Title="Sales by Hour">
+        <ApexPointSeries TItem="HourlySalesPoint" Items="_salesByHour.Hours" Name="Sales" SeriesType="SeriesType.Bar"
+            XValue="@(h => h.Hour.ToString())" YValue="@(h => (decimal?)h.Sales)" />
+    </ApexChart>
+}
+
+@if (_trend is not null)
+{
+    <h2>Revenue vs. Expenses vs. Net (30-day trend)</h2>
+    <ApexChart TItem="DailyTrendPoint" Title="Revenue vs Expenses vs Net">
+        <ApexPointSeries TItem="DailyTrendPoint" Items="_trend" Name="Revenue" SeriesType="SeriesType.Line"
+            XValue="@(t => t.Date.ToString("MMM d"))" YValue="@(t => (decimal?)t.Revenue)" />
+        <ApexPointSeries TItem="DailyTrendPoint" Items="_trend" Name="Expenses" SeriesType="SeriesType.Line"
+            XValue="@(t => t.Date.ToString("MMM d"))" YValue="@(t => (decimal?)t.Expenses)" />
+        <ApexPointSeries TItem="DailyTrendPoint" Items="_trend" Name="Net" SeriesType="SeriesType.Line"
+            XValue="@(t => t.Date.ToString("MMM d"))" YValue="@(t => (decimal?)t.Net)" />
+    </ApexChart>
+}
+
+@code {
+    private DateOnly _from = DateOnly.FromDateTime(DateTime.Now.AddDays(-29));
+    private DateOnly _to = DateOnly.FromDateTime(DateTime.Now);
+    private DashboardKpiDto? _kpis;
+    private SalesByHourResult? _salesByHour;
+    private List<DailyTrendPoint>? _trend;
+
+    protected override async Task OnInitializedAsync() => await LoadAsync();
+
+    private async Task LoadAsync()
+    {
+        _kpis = await DashboardService.GetKpisAsync(_from, _to);
+        _salesByHour = await DashboardService.GetSalesByHourAsync(_to);
+        _trend = await DashboardService.GetRevenueExpenseTrendAsync(_from, _to);
+    }
+
+    private static string FormatPeso(decimal amount) => string.Format("₱{0:N2}", amount);
+}
