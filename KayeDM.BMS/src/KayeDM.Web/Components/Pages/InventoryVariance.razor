@@ -1,0 +1,85 @@
+@page "/inventory/variance"
+@using KayeDM.Application.Inventory
+@inject IInventoryService InventoryService
+
+<PageTitle>Variance Report</PageTitle>
+
+<h1>Produced / Sold / Wasted Variance</h1>
+
+<div class="mb-3">
+    <label>From (yyyy-MM-dd)</label>
+    <input type="text" class="form-control" placeholder="2026-07-01" @bind="_fromInput" />
+
+    <label>To (yyyy-MM-dd)</label>
+    <input type="text" class="form-control" placeholder="2026-07-31" @bind="_toInput" />
+
+    <button class="btn btn-primary mt-2" @onclick="LoadAsync">Run Report</button>
+</div>
+
+@if (_error is not null)
+{
+    <div class="alert alert-danger">@_error</div>
+}
+
+@if (_rows is not null)
+{
+    @if (_rows.Count == 0)
+    {
+        <p>No batches in this date range.</p>
+    }
+    else
+    {
+        <table class="table">
+            <thead>
+                <tr>
+                    <th>Date</th>
+                    <th>Dish</th>
+                    <th>Produced</th>
+                    <th>Sold</th>
+                    <th>Wasted</th>
+                    <th>Variance %</th>
+                </tr>
+            </thead>
+            <tbody>
+                @foreach (var row in _rows)
+                {
+                    <tr>
+                        <td>@row.Date.ToString("MMM d, yyyy")</td>
+                        <td>@row.MenuItemName</td>
+                        <td>@row.Produced</td>
+                        <td>@row.Sold</td>
+                        <td>@row.Wasted</td>
+                        <td>@row.VariancePercent%</td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    }
+}
+
+@code {
+    private string _fromInput = DateTime.Now.Date.ToString("yyyy-MM-dd");
+    private string _toInput = DateTime.Now.Date.ToString("yyyy-MM-dd");
+    private List<VarianceRow>? _rows;
+    private string? _error;
+
+    private async Task LoadAsync()
+    {
+        _error = null;
+        _rows = null;
+
+        if (!DateOnly.TryParse(_fromInput, out var from) || !DateOnly.TryParse(_toInput, out var to))
+        {
+            _error = "Select a valid date range.";
+            return;
+        }
+
+        if (to < from)
+        {
+            _error = "'To' date must be on or after 'From' date.";
+            return;
+        }
+
+        _rows = await InventoryService.GetVarianceAsync(from, to);
+    }
+}
