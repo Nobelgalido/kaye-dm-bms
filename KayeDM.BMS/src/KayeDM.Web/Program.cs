@@ -14,6 +14,7 @@ using KayeDM.Infrastructure.Identity;
 using KayeDM.Infrastructure.Inventory;
 using KayeDM.Infrastructure.Menu;
 using KayeDM.Infrastructure.Orders;
+using KayeDM.Infrastructure.Seeding;
 using KayeDM.Web.Components;
 using ApexCharts;
 using Microsoft.AspNetCore.Identity;
@@ -111,5 +112,14 @@ app.MapPost("/account/logout", async (SignInManager<IdentityUser> signInManager)
     await signInManager.SignOutAsync();
     return Results.LocalRedirect("/account/login");
 });
+
+if (args.Contains("--seed"))
+{
+    using var seedScope = app.Services.CreateScope();
+    var dbContextFactory = seedScope.ServiceProvider.GetRequiredService<IDbContextFactory<AppDbContext>>();
+    await using var seedDb = await dbContextFactory.CreateDbContextAsync();
+    await new SeedDataGenerator().RunAsync(seedDb);
+    return;
+}
 
 app.Run();
