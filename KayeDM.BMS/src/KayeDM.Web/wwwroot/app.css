@@ -1,19 +1,67 @@
+:root {
+  /* Brand */
+  --route-blue:        #1E40AF;
+  --route-blue-deep:   #14276B;
+  --route-blue-tint:   #E8EDFB;
+  --signal-yellow:     #FFC933;
+  --sili-coral:        #EF5B4C;
+  --palay-green:       #2E8B57;
+
+  /* Neutrals */
+  --ink:               #1C2333;
+  --ink-soft:          #5A6478;
+  --paper:             #FAFAF7;
+  --surface:           #FFFFFF;
+  --line:              #E4E4DC;
+
+  /* Semantic aliases */
+  --danger: var(--sili-coral);
+  --success: var(--palay-green);
+  --warning-bg: #FFF7DE;
+  --danger-bg:  #FDEBE9;
+  --success-bg: #E9F5EE;
+
+  /* Typography */
+  --font-display: 'Archivo', system-ui, sans-serif;
+  --font-body:    'Figtree', system-ui, sans-serif;
+  --font-mono:    'IBM Plex Mono', monospace;
+
+  /* Space (4px base scale) */
+  --s-1: 4px; --s-2: 8px; --s-3: 12px; --s-4: 16px; --s-5: 24px; --s-6: 32px; --s-7: 48px;
+
+  /* Radius */
+  --r-sm: 8px;
+  --r-md: 12px;
+  --r-full: 999px;
+
+  /* Elevation */
+  --shadow-1: 0 1px 2px rgb(20 39 107 / 0.06), 0 1px 3px rgb(20 39 107 / 0.08);
+  --shadow-2: 0 4px 12px rgb(20 39 107 / 0.10), 0 2px 4px rgb(20 39 107 / 0.06);
+
+  /* Motion */
+  --t-fast: 120ms;
+  --t-base: 180ms;
+  --ease: cubic-bezier(0.2, 0, 0, 1);
+}
+
 html, body {
-    font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif;
+    font-family: var(--font-body);
+    background-color: var(--paper);
+    color: var(--ink);
 }
 
 a, .btn-link {
-    color: #006bb7;
+    color: var(--route-blue);
 }
 
 .btn-primary {
     color: #fff;
-    background-color: #1b6ec2;
-    border-color: #1861ac;
+    background-color: var(--route-blue);
+    border-color: var(--route-blue);
 }
 
 .btn:focus, .btn:active:focus, .btn-link.nav-link:focus, .form-control:focus, .form-check-input:focus {
-  box-shadow: 0 0 0 0.1rem white, 0 0 0 0.25rem #258cfb;
+  box-shadow: 0 0 0 0.1rem white, 0 0 0 0.25rem var(--route-blue);
 }
 
 .content {
@@ -25,15 +73,15 @@ h1:focus {
 }
 
 .valid.modified:not([type=checkbox]) {
-    outline: 1px solid #26b050;
+    outline: 1px solid var(--success);
 }
 
 .invalid {
-    outline: 1px solid #e50000;
+    outline: 1px solid var(--danger);
 }
 
 .validation-message {
-    color: #e50000;
+    color: var(--danger);
 }
 
 .blazor-error-boundary {
@@ -48,4 +96,34 @@ h1:focus {
 
 .darker-border-checkbox.form-check-input {
     border-color: #929292;
+}
+
+/* Route line signature element — used only for the active nav marker (Sidebar.razor.css)
+   and the login card divider (RouteDivider.razor). Do not add more usages here;
+   dashboard section dividers and chart markers are out of scope for this task. */
+.route-line {
+    position: relative;
+    height: 2px;
+    background-image: repeating-linear-gradient(to right, var(--line) 0 6px, transparent 6px 12px);
+    margin: var(--s-4) 0;
+}
+
+.route-line__dot {
+    position: absolute;
+    left: 0;
+    top: 50%;
+    transform: translate(-50%, -50%);
+    width: 8px;
+    height: 8px;
+    border-radius: var(--r-full);
+    background: var(--rd-color, var(--route-blue));
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.001ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.001ms !important;
+    scroll-behavior: auto !important;
+  }
 }
