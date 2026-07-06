@@ -40,11 +40,6 @@
                     <NavLink class="nav-link" href="buses/companies">Companies</NavLink>
                 </div>
             </AuthorizeView>
-            <AuthorizeView Roles="Owner">
-                <div class="nav-item">
-                    <NavLink class="nav-link" href="buses/report">Crew Meal Report</NavLink>
-                </div>
-            </AuthorizeView>
         </NavGroup>
 
         <NavGroup Label="Inventory" RoutePrefixes="@(new[] { "inventory" })">
@@ -54,11 +49,6 @@
             <div class="nav-item">
                 <NavLink class="nav-link" href="inventory/waste">Waste</NavLink>
             </div>
-            <AuthorizeView Roles="Owner">
-                <div class="nav-item">
-                    <NavLink class="nav-link" href="inventory/variance">Variance</NavLink>
-                </div>
-            </AuthorizeView>
         </NavGroup>
 
         <AuthorizeView Roles="Owner">
@@ -69,8 +59,25 @@
                 <div class="nav-item">
                     <NavLink class="nav-link" href="expenses/categories">Categories</NavLink>
                 </div>
+            </NavGroup>
+        </AuthorizeView>
+
+        <AuthorizeView Roles="Owner">
+            <NavGroup Label="Reports" RoutePrefixes="@(new[] { "reports", "closing/history" })">
                 <div class="nav-item">
-                    <NavLink class="nav-link" href="expenses/report">Report</NavLink>
+                    <NavLink class="nav-link" href="reports">Overview</NavLink>
+                </div>
+                <div class="nav-item">
+                    <NavLink class="nav-link" href="buses/report">Crew Meals</NavLink>
+                </div>
+                <div class="nav-item">
+                    <NavLink class="nav-link" href="inventory/variance">Variance</NavLink>
+                </div>
+                <div class="nav-item">
+                    <NavLink class="nav-link" href="expenses/report">Expenses</NavLink>
+                </div>
+                <div class="nav-item">
+                    <NavLink class="nav-link" href="closing/history">Daily Closings</NavLink>
                 </div>
             </NavGroup>
         </AuthorizeView>
