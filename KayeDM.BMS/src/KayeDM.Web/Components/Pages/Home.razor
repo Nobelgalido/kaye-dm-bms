@@ -1,9 +1,24 @@
-﻿@page "/"
+@page "/"
 @attribute [Authorize]
 @using Microsoft.AspNetCore.Authorization
+@using System.Security.Claims
 
-<PageTitle>Home</PageTitle>
+<PageTitle>Kaye & DM BMS</PageTitle>
 
-<h1>Hello, world!</h1>
+@code {
+    [Inject]
+    private NavigationManager NavigationManager { get; set; } = default!;
 
-Welcome to your new app.
+    [CascadingParameter]
+    private Task<AuthenticationState>? AuthenticationStateTask { get; set; }
+
+    protected override async Task OnInitializedAsync()
+    {
+        var authState = await AuthenticationStateTask!;
+        var roles = authState.User.Claims
+            .Where(c => c.Type == ClaimTypes.Role)
+            .Select(c => c.Value);
+
+        NavigationManager.NavigateTo(RoleHome.Resolve(roles), replace: true);
+    }
+}

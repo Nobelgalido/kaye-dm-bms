@@ -1,0 +1,52 @@
+@implements IDisposable
+@inject NavigationManager Nav
+
+<div class="nav-group">
+    <button type="button" class="nav-group__header" @onclick="Toggle" aria-expanded="@_expanded.ToString().ToLowerInvariant()">
+        <span class="nav-group__label">@Label</span>
+        <span class="nav-group__chevron @(_expanded ? "nav-group__chevron--open" : "")" aria-hidden="true">▾</span>
+    </button>
+    <div class="nav-group__body @(_expanded ? "nav-group__body--open" : "")">
+        @ChildContent
+    </div>
+</div>
+
+@code {
+    [Parameter, EditorRequired]
+    public string Label { get; set; } = "";
+
+    [Parameter, EditorRequired]
+    public string[] RoutePrefixes { get; set; } = Array.Empty<string>();
+
+    [Parameter]
+    public RenderFragment? ChildContent { get; set; }
+
+    private bool _expanded;
+
+    protected override void OnInitialized()
+    {
+        Nav.LocationChanged += OnLocationChanged;
+        SyncExpanded();
+    }
+
+    protected override void OnParametersSet() => SyncExpanded();
+
+    private void OnLocationChanged(object? sender, LocationChangedEventArgs e)
+    {
+        SyncExpanded();
+        InvokeAsync(StateHasChanged);
+    }
+
+    private void SyncExpanded()
+    {
+        var path = new Uri(Nav.Uri).AbsolutePath;
+        if (NavRouteMatcher.IsActive(path, RoutePrefixes))
+        {
+            _expanded = true;
+        }
+    }
+
+    private void Toggle() => _expanded = !_expanded;
+
+    public void Dispose() => Nav.LocationChanged -= OnLocationChanged;
+}

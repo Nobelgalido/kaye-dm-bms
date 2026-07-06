@@ -1,0 +1,111 @@
+.login-page {
+    min-height: 100vh;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: var(--paper);
+    padding: var(--s-4);
+}
+
+.login-card {
+    width: 100%;
+    max-width: 380px;
+    background: var(--surface);
+    border: 1px solid var(--line);
+    border-radius: var(--r-md);
+    box-shadow: var(--shadow-2);
+    padding: var(--s-6);
+    text-align: center;
+}
+
+.login-card__logo {
+    margin: 0 auto var(--s-3);
+    display: block;
+}
+
+.login-card__title {
+    font-family: var(--font-display);
+    font-weight: 700;
+    font-size: 1.375rem;
+    letter-spacing: -0.01em;
+    color: var(--ink);
+    margin: 0;
+}
+
+.login-card__error {
+    background: var(--danger-bg);
+    color: var(--danger);
+    border-radius: var(--r-sm);
+    padding: var(--s-2) var(--s-3);
+    font-size: 0.875rem;
+    margin-bottom: var(--s-3);
+    text-align: left;
+}
+
+.login-card__form {
+    display: flex;
+    flex-direction: column;
+    gap: var(--s-3);
+    text-align: left;
+    margin-top: var(--s-3);
+}
+
+.login-card__field label {
+    display: block;
+    font-family: var(--font-body);
+    font-weight: 600;
+    font-size: 0.875rem;
+    color: var(--ink);
+    margin-bottom: var(--s-1);
+}
+
+.login-card__field input {
+    width: 100%;
+    box-sizing: border-box;
+    height: 40px;
+    padding: 0 var(--s-3);
+    border: 1px solid var(--line);
+    border-radius: var(--r-sm);
+    font-size: 1rem;
+    font-family: var(--font-body);
+}
+
+.login-card__field input:focus-visible {
+    outline: 2px solid var(--route-blue);
+    outline-offset: 2px;
+}
+
+.login-card__submit {
+    height: 40px;
+    border: none;
+    border-radius: var(--r-sm);
+    background: var(--route-blue);
+    color: white;
+    font-family: var(--font-body);
+    font-weight: 600;
+    cursor: pointer;
+    margin-top: var(--s-1);
+}
+
+.login-card__submit:hover {
+    filter: brightness(0.94);
+}
+
+.login-card__submit:active {
+    transform: scale(0.97);
+}
+
+.login-card__submit:focus-visible {
+    outline: 2px solid var(--signal-yellow);
+    outline-offset: 2px;
+}
+
+.login-card__tagline {
+    margin: var(--s-4) 0 0;
+    font-size: 0.8125rem;
+    color: var(--ink-soft);
+}
+
+.login-card__tagline-coral {
+    color: var(--sili-coral);
+}

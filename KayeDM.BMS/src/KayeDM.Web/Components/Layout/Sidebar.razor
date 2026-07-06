@@ -1,0 +1,117 @@
+@implements IDisposable
+@inject NavigationManager Nav
+
+<aside class="sidebar-shell">
+    <div class="sidebar-header">
+        <a href="/" class="sidebar-brand">
+            <img src="img/kaye-dm-logo-3d-64.png" alt="Kaye &amp; DM" width="40" height="40" />
+            <span class="sidebar-brand__text">Kaye &amp; DM</span>
+        </a>
+        <button type="button" class="sidebar-toggle" aria-label="Toggle navigation"
+                aria-expanded="@_mobileOpen.ToString().ToLowerInvariant()" @onclick="ToggleMobile">
+            <span></span><span></span><span></span>
+        </button>
+    </div>
+
+    <nav class="sidebar-nav @(_mobileOpen ? "sidebar-nav--open" : "")">
+        <AuthorizeView Roles="Owner">
+            <div class="nav-item">
+                <NavLink class="nav-link" href="dashboard">Dashboard</NavLink>
+            </div>
+        </AuthorizeView>
+
+        <NavGroup Label="Sales" RoutePrefixes="@(new[] { "pos", "closing" })">
+            <div class="nav-item">
+                <NavLink class="nav-link" href="pos">POS</NavLink>
+            </div>
+            <AuthorizeView Roles="Owner">
+                <div class="nav-item">
+                    <NavLink class="nav-link" href="closing">Daily Closing</NavLink>
+                </div>
+            </AuthorizeView>
+        </NavGroup>
+
+        <NavGroup Label="Buses" RoutePrefixes="@(new[] { "buses" })">
+            <div class="nav-item">
+                <NavLink class="nav-link" href="buses/arrivals">Arrivals</NavLink>
+            </div>
+            <AuthorizeView Roles="Owner">
+                <div class="nav-item">
+                    <NavLink class="nav-link" href="buses/companies">Companies</NavLink>
+                </div>
+            </AuthorizeView>
+            <AuthorizeView Roles="Owner">
+                <div class="nav-item">
+                    <NavLink class="nav-link" href="buses/report">Crew Meal Report</NavLink>
+                </div>
+            </AuthorizeView>
+        </NavGroup>
+
+        <NavGroup Label="Inventory" RoutePrefixes="@(new[] { "inventory" })">
+            <div class="nav-item">
+                <NavLink class="nav-link" href="inventory/production">Production</NavLink>
+            </div>
+            <div class="nav-item">
+                <NavLink class="nav-link" href="inventory/waste">Waste</NavLink>
+            </div>
+            <AuthorizeView Roles="Owner">
+                <div class="nav-item">
+                    <NavLink class="nav-link" href="inventory/variance">Variance</NavLink>
+                </div>
+            </AuthorizeView>
+        </NavGroup>
+
+        <AuthorizeView Roles="Owner">
+            <NavGroup Label="Expenses" RoutePrefixes="@(new[] { "expenses" })">
+                <div class="nav-item">
+                    <NavLink class="nav-link" href="expenses">Entry</NavLink>
+                </div>
+                <div class="nav-item">
+                    <NavLink class="nav-link" href="expenses/categories">Categories</NavLink>
+                </div>
+                <div class="nav-item">
+                    <NavLink class="nav-link" href="expenses/report">Report</NavLink>
+                </div>
+            </NavGroup>
+        </AuthorizeView>
+
+        <AuthorizeView Roles="Owner">
+            <div class="nav-item">
+                <NavLink class="nav-link" href="menu">Menu</NavLink>
+            </div>
+        </AuthorizeView>
+    </nav>
+
+    <div class="sidebar-footer">
+        <AuthorizeView>
+            <Authorized>
+                <div class="user-chip">
+                    <span class="user-chip__name">@context.User.Identity?.Name</span>
+                    <span class="role-badge @(context.User.IsInRole("Owner") ? "role-badge--owner" : "role-badge--cashier")">
+                        @(context.User.IsInRole("Owner") ? "Owner" : "Cashier")
+                    </span>
+                </div>
+                <form method="post" action="account/logout">
+                    <AntiforgeryToken />
+                    <button type="submit" class="sidebar-logout">Log Out</button>
+                </form>
+            </Authorized>
+        </AuthorizeView>
+    </div>
+</aside>
+
+@code {
+    private bool _mobileOpen;
+
+    protected override void OnInitialized() => Nav.LocationChanged += OnLocationChanged;
+
+    private void OnLocationChanged(object? sender, LocationChangedEventArgs e)
+    {
+        _mobileOpen = false;
+        InvokeAsync(StateHasChanged);
+    }
+
+    private void ToggleMobile() => _mobileOpen = !_mobileOpen;
+
+    public void Dispose() => Nav.LocationChanged -= OnLocationChanged;
+}
