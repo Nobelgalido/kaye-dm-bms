@@ -1,0 +1,112 @@
+@page "/closing/history"
+@attribute [Authorize(Roles = "Owner")]
+@using Microsoft.AspNetCore.Authorization
+@using KayeDM.Application.Closing
+@inject IClosingService ClosingService
+
+<PageTitle>Daily Closing History — Kaye & DM BMS</PageTitle>
+
+<PageHeader Title="Daily Closing History" />
+
+@if (_history is null)
+{
+    <p>Loading…</p>
+}
+else if (_history.Count == 0)
+{
+    <div class="closing-history-empty">
+        <span class="closing-history-empty__glyph" aria-hidden="true">
+            <svg viewBox="0 0 24 24" width="40" height="40" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+                <rect x="3" y="5" width="18" height="16" rx="2" />
+                <path d="M3 9h18" />
+                <path d="M8 3v4" />
+                <path d="M16 3v4" />
+                <path d="M8.5 14.5l2 2 4-4.5" />
+            </svg>
+        </span>
+        <p class="closing-history-empty__text">No days have been closed yet — close today from Daily Closing once the shift wraps up.</p>
+        <a class="closing-history-empty__action" href="closing">Go to Daily Closing</a>
+    </div>
+}
+else
+{
+    <table class="closing-history-table">
+        <thead>
+            <tr>
+                <th>Date</th>
+                <th class="closing-history-table__money-head">Sales</th>
+                <th class="closing-history-table__money-head">Expenses</th>
+                <th class="closing-history-table__money-head">Net</th>
+                <th>Closed By</th>
+            </tr>
+        </thead>
+        <tbody>
+            @foreach (var row in _history)
+            {
+                <tr class="closing-history-table__row" tabindex="0" role="button"
+                    aria-expanded="@(_expandedId == row.Id ? "true" : "false")"
+                    aria-controls="@($"closing-detail-{row.Id}")"
+                    @onclick="() => ToggleRow(row.Id)"
+                    @onkeydown="@(e => OnRowKeyDown(e, row.Id))">
+                    <td>@row.Date.ToString("MMM d, yyyy")</td>
+                    <td class="closing-history-table__money">@FormatPeso(row.TotalSales)</td>
+                    <td class="closing-history-table__money">@FormatPeso(row.TotalExpenses)</td>
+                    <td class="closing-history-table__money @(row.NetForDay >= 0 ? "closing-history-table__money--positive" : "closing-history-table__money--negative")">@FormatPeso(row.NetForDay)</td>
+                    <td>@row.ClosedById</td>
+                </tr>
+                @if (_expandedId == row.Id)
+                {
+                    <tr class="closing-history-detail" id="@($"closing-detail-{row.Id}")">
+                        <td colspan="5">
+                            <div class="closing-history-detail__grid">
+                                <div class="closing-history-detail__cell">
+                                    <span class="closing-history-detail__label">Cash Sales</span>
+                                    <strong class="closing-history-detail__value">@FormatPeso(row.CashSales)</strong>
+                                </div>
+                                <div class="closing-history-detail__cell">
+                                    <span class="closing-history-detail__label">GCash Sales</span>
+                                    <strong class="closing-history-detail__value">@FormatPeso(row.GCashSales)</strong>
+                                </div>
+                                <div class="closing-history-detail__cell">
+                                    <span class="closing-history-detail__label">Order Count</span>
+                                    <strong class="closing-history-detail__value">@row.OrderCount</strong>
+                                </div>
+                                <div class="closing-history-detail__cell">
+                                    <span class="closing-history-detail__label">Voided Count</span>
+                                    <strong class="closing-history-detail__value">@row.VoidedCount</strong>
+                                </div>
+                                <div class="closing-history-detail__cell">
+                                    <span class="closing-history-detail__label">Crew Meals Given</span>
+                                    <strong class="closing-history-detail__value">@row.CrewMealsGiven</strong>
+                                </div>
+                                <div class="closing-history-detail__cell">
+                                    <span class="closing-history-detail__label">Closed At</span>
+                                    <strong class="closing-history-detail__value">@row.ClosedAt.ToString("MMM d, yyyy h:mm tt")</strong>
+                                </div>
+                            </div>
+                        </td>
+                    </tr>
+                }
+            }
+        </tbody>
+    </table>
+}
+
+@code {
+    private List<DailyClosingDto>? _history;
+    private int? _expandedId;
+
+    protected override async Task OnInitializedAsync() => _history = await ClosingService.GetHistoryAsync();
+
+    private void ToggleRow(int id) => _expandedId = _expandedId == id ? null : id;
+
+    private void OnRowKeyDown(KeyboardEventArgs e, int id)
+    {
+        if (e.Key is "Enter")
+        {
+            ToggleRow(id);
+        }
+    }
+
+    private static string FormatPeso(decimal amount) => string.Format("₱{0:N2}", amount);
+}

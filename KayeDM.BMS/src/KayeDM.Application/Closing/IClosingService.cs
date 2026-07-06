@@ -8,4 +8,7 @@ public interface IClosingService
     Task<DailyClosingDto> CreateClosingAsync(string closedById);
 
     Task<bool> IsDateClosedAsync(DateOnly date);
+
+    // Read-only history for the /closing/history report — every closed day, newest first.
+    Task<List<DailyClosingDto>> GetHistoryAsync();
 }
