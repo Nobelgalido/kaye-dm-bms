@@ -238,6 +238,33 @@ h1:focus {
     opacity: 0.55;
 }
 
+/* Alerts — overrides Bootstrap's .alert/.alert-* so every page (POS,
+   closing, and the remaining CRUD pages) gets one consistent look. */
+.alert {
+    border: none;
+    border-left: 4px solid var(--ink-soft);
+    border-radius: var(--r-sm);
+    padding: var(--s-3) var(--s-4);
+    font-size: 0.875rem;
+    color: var(--ink);
+    background: var(--paper);
+}
+
+.alert-success {
+    border-left-color: var(--palay-green);
+    background: var(--success-bg);
+}
+
+.alert-danger {
+    border-left-color: var(--sili-coral);
+    background: var(--danger-bg);
+}
+
+.alert-warning {
+    border-left-color: var(--signal-yellow);
+    background: var(--warning-bg);
+}
+
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after {
     animation-duration: 0.001ms !important;

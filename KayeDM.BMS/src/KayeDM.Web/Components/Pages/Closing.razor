@@ -13,28 +13,40 @@
 
 @if (_figures is null)
 {
-    <p>Loading…</p>
+    <p class="closing-loading">Loading…</p>
 }
 else if (_figures.AlreadyClosed)
 {
-    <div class="alert alert-success">Today has already been closed. No further orders, voids, or expenses can be logged for today or earlier.</div>
+    <div class="closing-closed">
+        <span class="closing-closed__badge">Closed</span>
+        <p>Today has already been closed. No further orders, voids, or expenses can be logged for today or earlier.</p>
+    </div>
 }
 else
 {
-    <table class="table">
-        <tbody>
-            <tr><th>Total Sales</th><td>@FormatPeso(_figures.TotalSales)</td></tr>
-            <tr><th>Cash Sales</th><td>@FormatPeso(_figures.CashSales)</td></tr>
-            <tr><th>GCash Sales</th><td>@FormatPeso(_figures.GCashSales)</td></tr>
-            <tr><th>Order Count</th><td>@_figures.OrderCount</td></tr>
-            <tr><th>Voided Count</th><td>@_figures.VoidedCount</td></tr>
-            <tr><th>Crew Meals Given</th><td>@_figures.CrewMealsGiven</td></tr>
-            <tr><th>Total Expenses</th><td>@FormatPeso(_figures.TotalExpenses)</td></tr>
-            <tr><th>Net For Day</th><td>@FormatPeso(_figures.NetForDay)</td></tr>
-        </tbody>
-    </table>
+    <div class="report-summary">
+        <KpiCard Label="Total Sales" NumericValue="_figures.TotalSales" Prefix="₱" Decimals="2" />
+        <KpiCard Label="Cash Sales" NumericValue="_figures.CashSales" Prefix="₱" Decimals="2" />
+        <KpiCard Label="GCash Sales" NumericValue="_figures.GCashSales" Prefix="₱" Decimals="2" />
+        <KpiCard Label="Orders" NumericValue="_figures.OrderCount" Decimals="0" />
+        <KpiCard Label="Voided" NumericValue="_figures.VoidedCount" Decimals="0" />
+        <KpiCard Label="Crew Meals Given" NumericValue="_figures.CrewMealsGiven" Decimals="0" />
+        <KpiCard Label="Total Expenses" NumericValue="_figures.TotalExpenses" Prefix="₱" Decimals="2" />
+        <KpiCard Label="Net For Day" NumericValue="_figures.NetForDay" Prefix="₱" Decimals="2" Highlight="true" />
+    </div>
 
-    <button class="btn btn-danger btn-lg" @onclick="ConfirmCloseAsync">Confirm — Close Today</button>
+    <div class="closing-confirm">
+        <p class="closing-confirm__warning">
+            Closing today locks every order, void, and expense dated today or earlier. This cannot be undone.
+        </p>
+        <button type="button" class="closing-confirm__button" disabled="@_isClosing" @onclick="ConfirmCloseAsync">
+            @if (_isClosing)
+            {
+                <span class="closing-confirm__spinner" aria-hidden="true"></span>
+            }
+            Confirm — Close Today
+        </button>
+    </div>
 }
 
 @if (_error is not null)
@@ -45,6 +57,7 @@ else
 @code {
     private TodaysFiguresDto? _figures;
     private string? _error;
+    private bool _isClosing;
 
     protected override async Task OnInitializedAsync() => await LoadAsync();
 
@@ -53,6 +66,7 @@ else
     private async Task ConfirmCloseAsync()
     {
         _error = null;
+        _isClosing = true;
         try
         {
             var authState = await AuthenticationStateProvider.GetAuthenticationStateAsync();
@@ -65,7 +79,9 @@ else
         {
             _error = ex.Message;
         }
+        finally
+        {
+            _isClosing = false;
+        }
     }
-
-    private static string FormatPeso(decimal amount) => string.Format("₱{0:N2}", amount);
 }

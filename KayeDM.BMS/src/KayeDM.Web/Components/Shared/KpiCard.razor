@@ -1,6 +1,6 @@
 @inject IJSRuntime JS
 
-<div class="kpi-card">
+<div class="kpi-card @(Highlight ? "kpi-card--highlight" : "")">
     <span class="kpi-card__label">@Label</span>
     @if (NumericValue.HasValue)
     {
@@ -41,6 +41,11 @@
     // is a one-shot moment, never replayed on filter refresh.
     [Parameter]
     public bool Animate { get; set; }
+
+    // The one KPI the owner cares about most (net profit) gets a route-blue
+    // accent border to stand out from the row.
+    [Parameter]
+    public bool Highlight { get; set; }
 
     protected override async Task OnAfterRenderAsync(bool firstRender)
     {

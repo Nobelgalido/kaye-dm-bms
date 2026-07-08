@@ -1,0 +1,107 @@
+.closing-loading {
+    color: var(--ink-soft);
+}
+
+.closing-closed {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: var(--s-3);
+    background: var(--surface);
+    border: 1px solid var(--line);
+    border-radius: var(--r-md);
+    box-shadow: var(--shadow-1);
+    padding: var(--s-5);
+}
+
+.closing-closed__badge {
+    display: inline-flex;
+    align-items: center;
+    height: 24px;
+    padding: 0 var(--s-3);
+    background: var(--ink);
+    color: #fff;
+    border-radius: var(--r-full);
+    font-size: 0.75rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+}
+
+.closing-closed p {
+    margin: 0;
+    color: var(--ink-soft);
+}
+
+.closing-confirm {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: var(--s-4);
+    background: var(--surface);
+    border: 1px solid var(--line);
+    border-radius: var(--r-md);
+    box-shadow: var(--shadow-1);
+    padding: var(--s-5);
+}
+
+.closing-confirm__warning {
+    margin: 0;
+    color: var(--sili-coral);
+    font-size: 0.875rem;
+    font-weight: 600;
+}
+
+.closing-confirm__button {
+    display: flex;
+    align-items: center;
+    gap: var(--s-2);
+    height: 56px;
+    padding: 0 var(--s-6);
+    background: var(--route-blue);
+    color: #fff;
+    border: none;
+    border-radius: var(--r-sm);
+    font-family: var(--font-body);
+    font-weight: 700;
+    font-size: 1.0625rem;
+    cursor: pointer;
+    transition: background-color var(--t-fast) var(--ease), transform var(--t-fast) var(--ease);
+}
+
+.closing-confirm__button:active:not(:disabled) {
+    transform: scale(0.97);
+}
+
+.closing-confirm__button:disabled {
+    opacity: 0.45;
+    cursor: not-allowed;
+}
+
+.closing-confirm__button:focus-visible {
+    outline: 2px solid var(--route-blue);
+    outline-offset: 2px;
+}
+
+.closing-confirm__spinner {
+    width: 16px;
+    height: 16px;
+    border: 2px solid rgba(255, 255, 255, 0.4);
+    border-top-color: #fff;
+    border-radius: var(--r-full);
+    animation: closing-spin 700ms linear infinite;
+}
+
+@keyframes closing-spin {
+    to { transform: rotate(360deg); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .closing-confirm__button {
+        transition: none;
+    }
+
+    .closing-confirm__spinner {
+        animation-duration: 1400ms;
+    }
+}
