@@ -1,0 +1,44 @@
+.report-table-frame {
+    overflow-y: auto;
+    overflow-x: auto;
+    max-height: 60vh;
+}
+
+@media (min-width: 900px) {
+    .report-table-frame {
+        flex: 1;
+        min-height: 0;
+        max-height: none;
+    }
+}
+
+.report-table-frame.fade-refresh {
+    animation: report-table-frame-fade var(--t-base) var(--ease);
+}
+
+@keyframes report-table-frame-fade {
+    from {
+        opacity: 0;
+    }
+    to {
+        opacity: 1;
+    }
+}
+
+.report-table-frame ::deep thead th {
+    position: sticky;
+    top: 0;
+    z-index: 1;
+}
+
+.report-table-frame ::deep tfoot th {
+    position: sticky;
+    bottom: 0;
+    z-index: 1;
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .report-table-frame.fade-refresh {
+        animation: none;
+    }
+}

@@ -98,9 +98,9 @@ h1:focus {
     border-color: #929292;
 }
 
-/* Route line signature element — used only for the active nav marker (Sidebar.razor.css)
-   and the login card divider (RouteDivider.razor). Do not add more usages here;
-   dashboard section dividers and chart markers are out of scope for this task. */
+/* Route line signature element — active nav marker (Sidebar.razor.css), the
+   login card divider (RouteDivider.razor), and section dividers on the
+   reports landing page / dashboard. */
 .route-line {
     position: relative;
     height: 2px;
@@ -117,6 +117,120 @@ h1:focus {
     height: 8px;
     border-radius: var(--r-full);
     background: var(--rd-color, var(--route-blue));
+}
+
+/* Form field: label-above-input, used by every page's filters and forms. */
+.field {
+    display: flex;
+    flex-direction: column;
+    gap: var(--s-1);
+}
+
+.field label {
+    font-family: var(--font-body);
+    font-weight: 600;
+    font-size: 0.875rem;
+    color: var(--ink);
+}
+
+.field input,
+.field select {
+    height: 40px;
+    padding: 0 var(--s-3);
+    border: 1px solid var(--line);
+    border-radius: var(--r-sm);
+    font-family: var(--font-body);
+    font-size: 1rem;
+    background: var(--surface);
+    color: var(--ink);
+}
+
+.field input:focus-visible,
+.field select:focus-visible {
+    outline: 2px solid var(--route-blue);
+    outline-offset: 2px;
+}
+
+.field--invalid input,
+.field--invalid select {
+    border-color: var(--sili-coral);
+}
+
+.field__error {
+    color: var(--sili-coral);
+    font-size: 0.8125rem;
+}
+
+.btn:disabled {
+    opacity: 0.45;
+    cursor: not-allowed;
+}
+
+/* Report page shell — the "fixed frame, scrolling data" pattern shared by
+   /buses/report, /inventory/variance, /expenses/report, /closing/history.
+   Above 900px the page itself never scrolls: header + filters + summary take
+   their natural height and ReportTableFrame fills and scrolls the rest. */
+.report-page {
+    display: flex;
+    flex-direction: column;
+}
+
+@media (min-width: 900px) {
+    .report-page {
+        height: calc(100vh - (var(--s-6) * 2));
+    }
+}
+
+.report-summary {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+    gap: var(--s-4);
+    margin-bottom: var(--s-5);
+}
+
+/* Report data table — money right-aligned in tabular Plex Mono. */
+.report-table {
+    width: 100%;
+    min-width: max-content;
+    border-collapse: collapse;
+    background: var(--surface);
+    border: 1px solid var(--line);
+    border-radius: var(--r-md);
+}
+
+.report-table th {
+    text-align: left;
+    padding: var(--s-3) var(--s-4);
+    font-family: var(--font-body);
+    font-weight: 600;
+    font-size: 0.75rem;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    color: var(--ink-soft);
+    background: var(--paper);
+    border-bottom: 1px solid var(--line);
+}
+
+.report-table td {
+    padding: var(--s-2) var(--s-4);
+    height: 48px;
+    border-bottom: 1px solid var(--line);
+}
+
+.report-table tfoot th {
+    border-top: 1px solid var(--line);
+    border-bottom: none;
+}
+
+.report-table__money-head {
+    text-align: right;
+}
+
+.report-table__money {
+    font-family: var(--font-mono);
+    font-weight: 500;
+    font-variant-numeric: tabular-nums;
+    text-align: right;
 }
 
 @media (prefers-reduced-motion: reduce) {

@@ -1,0 +1,22 @@
+<div class="report-empty">
+    <span class="report-empty__glyph" aria-hidden="true">@Glyph</span>
+    <p class="report-empty__text">@Message</p>
+    @if (!string.IsNullOrEmpty(ActionText) && !string.IsNullOrEmpty(ActionHref))
+    {
+        <a class="report-empty__action" href="@ActionHref">@ActionText</a>
+    }
+</div>
+
+@code {
+    [Parameter, EditorRequired]
+    public string Message { get; set; } = "";
+
+    [Parameter]
+    public RenderFragment? Glyph { get; set; }
+
+    [Parameter]
+    public string? ActionText { get; set; }
+
+    [Parameter]
+    public string? ActionHref { get; set; }
+}

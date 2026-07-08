@@ -1,0 +1,13 @@
+<div class="report-table-frame fade-refresh" @key="RefreshKey">
+    @ChildContent
+</div>
+
+@code {
+    [Parameter]
+    public RenderFragment? ChildContent { get; set; }
+
+    // Changing this (e.g. the parent's results-version counter) remounts the
+    // frame so the fade-refresh animation replays on every filter apply.
+    [Parameter]
+    public object? RefreshKey { get; set; }
+}
