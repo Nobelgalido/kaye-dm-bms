@@ -73,9 +73,28 @@ var app = builder.Build();
 
 using (var scope = app.Services.CreateScope())
 {
+    var dbContextFactory = scope.ServiceProvider.GetRequiredService<IDbContextFactory<AppDbContext>>();
+    await using (var migrationDb = await dbContextFactory.CreateDbContextAsync())
+    {
+        await migrationDb.Database.MigrateAsync();
+    }
+
     var expenseService = scope.ServiceProvider.GetRequiredService<IExpenseService>();
     await expenseService.SeedDefaultCategoriesAsync();
     await IdentitySeeder.SeedAsync(scope.ServiceProvider);
+
+    // Docker's one-liner start: seed the 30-day demo dataset the first time
+    // the container sees an empty database, never again after that, so a
+    // container restart doesn't wipe whatever the seeded data has become
+    // through actual use (SeedDataGenerator.RunAsync always wipes first).
+    if (builder.Configuration.GetValue("SEED_ON_START", false))
+    {
+        await using var seedDb = await dbContextFactory.CreateDbContextAsync();
+        if (!await seedDb.MenuItems.AnyAsync())
+        {
+            await new SeedDataGenerator().RunAsync(seedDb);
+        }
+    }
 }
 
 // Configure the HTTP request pipeline.
