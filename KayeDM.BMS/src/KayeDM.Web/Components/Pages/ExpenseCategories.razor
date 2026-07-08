@@ -62,25 +62,29 @@ else
 
 @if (_editing)
 {
+    <div class="entry-form-card">
     <EditForm Model="_form" OnValidSubmit="SaveAsync">
         <DataAnnotationsValidator />
         <ValidationSummary />
-        <div class="field">
-            <label>Name</label>
-            <InputText @bind-Value="_form.Name" />
+        <div class="entry-form-card__row">
+            <div class="field">
+                <label>Name</label>
+                <InputText @bind-Value="_form.Name" />
+            </div>
+            <div class="field">
+                <label>Type</label>
+                <InputSelect @bind-Value="_form.Type">
+                    @foreach (var type in Enum.GetValues<ExpenseCategoryType>())
+                    {
+                        <option value="@type">@type</option>
+                    }
+                </InputSelect>
+            </div>
+            <button type="submit" class="btn btn-success">Save</button>
+            <button type="button" class="btn btn-link" @onclick="CancelEdit">Cancel</button>
         </div>
-        <div class="field">
-            <label>Type</label>
-            <InputSelect @bind-Value="_form.Type">
-                @foreach (var type in Enum.GetValues<ExpenseCategoryType>())
-                {
-                    <option value="@type">@type</option>
-                }
-            </InputSelect>
-        </div>
-        <button type="submit" class="btn btn-success">Save</button>
-        <button type="button" class="btn btn-link" @onclick="CancelEdit">Cancel</button>
     </EditForm>
+    </div>
 }
 
 @code {

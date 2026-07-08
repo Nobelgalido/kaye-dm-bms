@@ -10,29 +10,33 @@
 
 <PageHeader Title="Bus Arrivals" />
 
-<EditForm Model="_form" OnValidSubmit="LogArrivalAsync">
-    <DataAnnotationsValidator />
-    <ValidationSummary />
-    <div class="field">
-        <label>Company</label>
-        <InputSelect @bind-Value="_form.BusCompanyId">
-            <option value="0">-- select --</option>
-            @foreach (var company in _companies)
-            {
-                <option value="@company.Id">@company.Name</option>
-            }
-        </InputSelect>
-    </div>
-    <div class="field">
-        <label>Bus Number</label>
-        <InputText @bind-Value="_form.BusNumber" />
-    </div>
-    <div class="field">
-        <label>Route</label>
-        <InputText @bind-Value="_form.Route" />
-    </div>
-    <button type="submit" class="btn btn-success">Bus Arrived</button>
-</EditForm>
+<div class="entry-form-card">
+    <EditForm Model="_form" OnValidSubmit="LogArrivalAsync">
+        <DataAnnotationsValidator />
+        <ValidationSummary />
+        <div class="entry-form-card__row">
+            <div class="field">
+                <label>Company</label>
+                <InputSelect @bind-Value="_form.BusCompanyId">
+                    <option value="0">-- select --</option>
+                    @foreach (var company in _companies)
+                    {
+                        <option value="@company.Id">@company.Name</option>
+                    }
+                </InputSelect>
+            </div>
+            <div class="field">
+                <label>Bus Number</label>
+                <InputText @bind-Value="_form.BusNumber" />
+            </div>
+            <div class="field">
+                <label>Route</label>
+                <InputText @bind-Value="_form.Route" />
+            </div>
+            <button type="submit" class="btn btn-success">Bus Arrived</button>
+        </div>
+    </EditForm>
+</div>
 
 @if (_error is not null)
 {
@@ -40,6 +44,7 @@
 }
 
 <h2 class="section-heading">Today's Trip Board</h2>
+<RouteDivider />
 
 @if (_board is null)
 {

@@ -12,29 +12,33 @@
 
 <PageHeader Title="Today's Tray Production" />
 
-<EditForm Model="_form" OnValidSubmit="SubmitAsync">
-    <DataAnnotationsValidator />
-    <ValidationSummary />
-    <div class="field">
-        <label>Dish</label>
-        <InputSelect @bind-Value="_form.MenuItemId">
-            <option value="0">-- select --</option>
-            @foreach (var item in _menuItems)
-            {
-                <option value="@item.Id">@item.Name</option>
-            }
-        </InputSelect>
-    </div>
-    <div class="field">
-        <label>Trays Produced</label>
-        <InputNumber @bind-Value="_form.TraysProduced" step="0.5" />
-    </div>
-    <div class="field">
-        <label>Servings per Tray</label>
-        <InputNumber @bind-Value="_form.ServingsPerTray" />
-    </div>
-    <button type="submit" class="btn btn-success">Log Batch</button>
-</EditForm>
+<div class="entry-form-card">
+    <EditForm Model="_form" OnValidSubmit="SubmitAsync">
+        <DataAnnotationsValidator />
+        <ValidationSummary />
+        <div class="entry-form-card__row">
+            <div class="field">
+                <label>Dish</label>
+                <InputSelect @bind-Value="_form.MenuItemId">
+                    <option value="0">-- select --</option>
+                    @foreach (var item in _menuItems)
+                    {
+                        <option value="@item.Id">@item.Name</option>
+                    }
+                </InputSelect>
+            </div>
+            <div class="field">
+                <label>Trays Produced</label>
+                <InputNumber @bind-Value="_form.TraysProduced" step="0.5" />
+            </div>
+            <div class="field">
+                <label>Servings per Tray</label>
+                <InputNumber @bind-Value="_form.ServingsPerTray" />
+            </div>
+            <button type="submit" class="btn btn-success">Log Batch</button>
+        </div>
+    </EditForm>
+</div>
 
 @if (_error is not null)
 {
@@ -42,6 +46,7 @@
 }
 
 <h2 class="section-heading">Today's Batches</h2>
+<RouteDivider />
 
 @if (_batches is null)
 {

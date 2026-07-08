@@ -13,54 +13,58 @@
 
 <PageHeader Title="Expenses" />
 
-<EditForm Model="_form" OnValidSubmit="SubmitAsync">
-    <DataAnnotationsValidator />
-    <ValidationSummary />
-    <div class="field">
-        <label>Date</label>
-        <InputDate @bind-Value="_form.Date" />
-    </div>
-    <div class="field">
-        <label>Category</label>
-        <InputSelect @bind-Value="_form.ExpenseCategoryId">
-            <option value="0">-- select --</option>
-            @foreach (var category in _categories)
+<div class="entry-form-card">
+    <EditForm Model="_form" OnValidSubmit="SubmitAsync">
+        <DataAnnotationsValidator />
+        <ValidationSummary />
+        <div class="entry-form-card__row">
+            <div class="field">
+                <label>Date</label>
+                <InputDate @bind-Value="_form.Date" />
+            </div>
+            <div class="field">
+                <label>Category</label>
+                <InputSelect @bind-Value="_form.ExpenseCategoryId">
+                    <option value="0">-- select --</option>
+                    @foreach (var category in _categories)
+                    {
+                        <option value="@category.Id">@category.Name</option>
+                    }
+                </InputSelect>
+            </div>
+            <div class="field">
+                <label>Description</label>
+                <InputText @bind-Value="_form.Description" />
+            </div>
+            <div class="field">
+                <label>Amount</label>
+                <InputNumber @bind-Value="_form.Amount" step="0.01" />
+            </div>
+            <div class="field">
+                <label>Payment Method</label>
+                <InputSelect @bind-Value="_form.PaymentMethod">
+                    @foreach (var method in Enum.GetValues<ExpensePaymentMethod>())
+                    {
+                        <option value="@method">@method</option>
+                    }
+                </InputSelect>
+            </div>
+            <div class="field">
+                <label>Vendor (optional)</label>
+                <InputText @bind-Value="_form.Vendor" />
+            </div>
+            <div class="field">
+                <label>Receipt Ref (optional)</label>
+                <InputText @bind-Value="_form.ReceiptRef" />
+            </div>
+            <button type="submit" class="btn btn-success">@(_editingId is null ? "Add Expense" : "Save Changes")</button>
+            @if (_editingId is not null)
             {
-                <option value="@category.Id">@category.Name</option>
+                <button type="button" class="btn btn-link" @onclick="CancelEdit">Cancel</button>
             }
-        </InputSelect>
-    </div>
-    <div class="field">
-        <label>Description</label>
-        <InputText @bind-Value="_form.Description" />
-    </div>
-    <div class="field">
-        <label>Amount</label>
-        <InputNumber @bind-Value="_form.Amount" step="0.01" />
-    </div>
-    <div class="field">
-        <label>Payment Method</label>
-        <InputSelect @bind-Value="_form.PaymentMethod">
-            @foreach (var method in Enum.GetValues<ExpensePaymentMethod>())
-            {
-                <option value="@method">@method</option>
-            }
-        </InputSelect>
-    </div>
-    <div class="field">
-        <label>Vendor (optional)</label>
-        <InputText @bind-Value="_form.Vendor" />
-    </div>
-    <div class="field">
-        <label>Receipt Ref (optional)</label>
-        <InputText @bind-Value="_form.ReceiptRef" />
-    </div>
-    <button type="submit" class="btn btn-success">@(_editingId is null ? "Add Expense" : "Save Changes")</button>
-    @if (_editingId is not null)
-    {
-        <button type="button" class="btn btn-link" @onclick="CancelEdit">Cancel</button>
-    }
-</EditForm>
+        </div>
+    </EditForm>
+</div>
 
 @if (_error is not null)
 {
@@ -68,6 +72,7 @@
 }
 
 <h2 class="section-heading">Filter</h2>
+<RouteDivider />
 <ReportFilterBar OnRun="LoadExpensesAsync" RunLabel="Filter" IsLoading="_isFiltering">
     <div class="field">
         <label for="expenses-filter-from">From</label>

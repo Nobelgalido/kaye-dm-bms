@@ -328,13 +328,43 @@ h1:focus {
 }
 
 /* Section heading for a second block on a page (e.g. "Today's Trip Board"
-   below an entry form) — a lighter-weight companion to PageHeader. */
+   below an entry form) — a lighter-weight companion to PageHeader. Always
+   paired with a <RouteDivider /> right after it, which supplies its own
+   top margin as the gap below the heading. */
 .section-heading {
     font-family: var(--font-display);
     font-weight: 700;
     font-size: 1.25rem;
     color: var(--ink);
-    margin: var(--s-6) 0 var(--s-4);
+    margin: var(--s-6) 0 0;
+}
+
+/* Entry/quick-log form card — labels-above-input fields laid out in a
+   single wrapping row, with the submit action as the last item. Used by
+   every CRUD page's add/edit form (Menu, Bus Companies, Bus Arrivals,
+   Inventory Production/Waste, Expenses, Expense Categories). */
+.entry-form-card {
+    display: flex;
+    flex-direction: column;
+    gap: var(--s-3);
+    background: var(--surface);
+    border: 1px solid var(--line);
+    border-radius: var(--r-md);
+    box-shadow: var(--shadow-1);
+    padding: var(--s-5);
+    margin-bottom: var(--s-5);
+}
+
+.entry-form-card__row {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: flex-end;
+    gap: var(--s-4);
+}
+
+.entry-form-card__row .field {
+    flex: 1;
+    min-width: 160px;
 }
 
 /* Report data table — money right-aligned in tabular Plex Mono. */
