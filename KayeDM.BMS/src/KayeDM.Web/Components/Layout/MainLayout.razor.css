@@ -4,14 +4,6 @@
     background: var(--paper);
 }
 
-.app-shell__sidebar {
-    width: 260px;
-    flex-shrink: 0;
-    position: sticky;
-    top: 0;
-    height: 100vh;
-}
-
 .app-shell__main {
     flex: 1;
     min-width: 0;
@@ -38,12 +30,6 @@
 @media (max-width: 899.98px) {
     .app-shell {
         flex-direction: column;
-    }
-
-    .app-shell__sidebar {
-        width: 100%;
-        height: auto;
-        position: static;
     }
 
     .app-shell__content {
