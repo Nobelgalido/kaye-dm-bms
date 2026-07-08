@@ -10,7 +10,11 @@ Final week of **Kaye & DM BMS**. Weeks 1–4.5 complete: full feature set, auth/
 
 ## Current state (do not redo)
 
-App shell, sidebar, login, access-denied, POS, and dashboard already carry the full design treatment from Week 4.5. Design tokens, fonts, and shared components (PageHeader, RouteDivider, badges, empty states, toasts) exist. Remaining CRUD/report pages have tokens applied but layouts unchanged. Migration history intact — never touch it. Packages pinned (8.0.11 + chart lib); no new packages.
+App shell, sidebar, login, and access-denied carry the full design treatment from Week 4.5. Design tokens, fonts, and shared components (PageHeader, RouteDivider, empty-state pattern) exist.
+
+**SCOPE CORRECTION (2026-07-08, confirmed twice by the user — do not re-litigate):** POS and Dashboard do NOT actually have the design treatment despite earlier drafts of this prompt assuming so — verified by inspecting the code (no `Pos.razor.css` / `Dashboard.razor.css`, plain Bootstrap markup, confirmed live via Playwright screenshot of the Cashier POS screen). `app.css` even has a stale comment claiming dashboard treatment is "out of scope" — delete it as part of Checkpoint 3. Decision: full treatment for POS, Dashboard, and Closing (`Closing.razor`, the daily-closing entry page — `ClosingHistory.razor` already got it in Checkpoint 1) is folded into **Checkpoint 3**, alongside the token-treatment sweep of the remaining CRUD/report pages. Still 4 checkpoints total, not 5.
+
+Remaining CRUD/report pages have tokens applied (global `app.css` custom properties) but layouts/markup unchanged — still stock Bootstrap. Migration history intact — never touch it. Packages pinned (8.0.11 + chart lib); no new packages.
 
 ## Scope — ONLY this
 
@@ -67,7 +71,7 @@ Every page not already treated in Week 4.5 — `/menu`, `/buses/companies`, `/bu
 
 1. Reports group + `/reports` landing + `/closing/history` working
 2. One report page fully converted to fixed-frame layout (I approve the pattern before it propagates to the other three)
-3. All remaining pages design-system complete
+3. POS, Dashboard, and Closing get full design-system treatment (rebuilt markup, per spec's "full treatment" tier) AND all remaining CRUD/report pages are design-system complete (token treatment tier). Delete the stale "dashboard out of scope" comment in `app.css` as part of this checkpoint.
 4. Docker + docs done, final walkthrough
 
 ## Deliverable format
