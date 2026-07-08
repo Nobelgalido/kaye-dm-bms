@@ -16,75 +16,75 @@
     <nav class="sidebar-nav @(_mobileOpen ? "sidebar-nav--open" : "")">
         <AuthorizeView Roles="Owner">
             <div class="nav-item">
-                <NavLink class="nav-link" href="dashboard">Dashboard</NavLink>
+                <NavLink class="nav-link" href="dashboard" Match="NavLinkMatch.All">Dashboard</NavLink>
             </div>
         </AuthorizeView>
 
         <NavGroup Label="Sales" RoutePrefixes="@(new[] { "pos", "closing" })">
             <div class="nav-item">
-                <NavLink class="nav-link" href="pos">POS</NavLink>
+                <NavLink class="nav-link" href="pos" Match="NavLinkMatch.All">POS</NavLink>
             </div>
             <AuthorizeView Roles="Owner">
                 <div class="nav-item">
-                    <NavLink class="nav-link" href="closing">Daily Closing</NavLink>
+                    <NavLink class="nav-link" href="closing" Match="NavLinkMatch.All">Daily Closing</NavLink>
                 </div>
             </AuthorizeView>
         </NavGroup>
 
-        <NavGroup Label="Buses" RoutePrefixes="@(new[] { "buses" })">
+        <NavGroup Label="Buses" RoutePrefixes="@(new[] { "buses/arrivals", "buses/companies" })">
             <div class="nav-item">
-                <NavLink class="nav-link" href="buses/arrivals">Arrivals</NavLink>
+                <NavLink class="nav-link" href="buses/arrivals" Match="NavLinkMatch.All">Arrivals</NavLink>
             </div>
             <AuthorizeView Roles="Owner">
                 <div class="nav-item">
-                    <NavLink class="nav-link" href="buses/companies">Companies</NavLink>
+                    <NavLink class="nav-link" href="buses/companies" Match="NavLinkMatch.All">Companies</NavLink>
                 </div>
             </AuthorizeView>
         </NavGroup>
 
-        <NavGroup Label="Inventory" RoutePrefixes="@(new[] { "inventory" })">
+        <NavGroup Label="Inventory" RoutePrefixes="@(new[] { "inventory/production", "inventory/waste" })">
             <div class="nav-item">
-                <NavLink class="nav-link" href="inventory/production">Production</NavLink>
+                <NavLink class="nav-link" href="inventory/production" Match="NavLinkMatch.All">Production</NavLink>
             </div>
             <div class="nav-item">
-                <NavLink class="nav-link" href="inventory/waste">Waste</NavLink>
+                <NavLink class="nav-link" href="inventory/waste" Match="NavLinkMatch.All">Waste</NavLink>
             </div>
         </NavGroup>
 
         <AuthorizeView Roles="Owner">
-            <NavGroup Label="Expenses" RoutePrefixes="@(new[] { "expenses" })">
+            <NavGroup Label="Expenses" RoutePrefixes="@(new[] { "expenses", "expenses/categories" })">
                 <div class="nav-item">
-                    <NavLink class="nav-link" href="expenses">Entry</NavLink>
+                    <NavLink class="nav-link" href="expenses" Match="NavLinkMatch.All">Entry</NavLink>
                 </div>
                 <div class="nav-item">
-                    <NavLink class="nav-link" href="expenses/categories">Categories</NavLink>
+                    <NavLink class="nav-link" href="expenses/categories" Match="NavLinkMatch.All">Categories</NavLink>
                 </div>
             </NavGroup>
         </AuthorizeView>
 
         <AuthorizeView Roles="Owner">
-            <NavGroup Label="Reports" RoutePrefixes="@(new[] { "reports", "closing/history" })">
+            <NavGroup Label="Reports" RoutePrefixes="@(new[] { "reports", "buses/report", "inventory/variance", "expenses/report", "closing/history" })">
                 <div class="nav-item">
-                    <NavLink class="nav-link" href="reports">Overview</NavLink>
+                    <NavLink class="nav-link" href="reports" Match="NavLinkMatch.All">Overview</NavLink>
                 </div>
                 <div class="nav-item">
-                    <NavLink class="nav-link" href="buses/report">Crew Meals</NavLink>
+                    <NavLink class="nav-link" href="buses/report" Match="NavLinkMatch.All">Crew Meals</NavLink>
                 </div>
                 <div class="nav-item">
-                    <NavLink class="nav-link" href="inventory/variance">Variance</NavLink>
+                    <NavLink class="nav-link" href="inventory/variance" Match="NavLinkMatch.All">Variance</NavLink>
                 </div>
                 <div class="nav-item">
-                    <NavLink class="nav-link" href="expenses/report">Expenses</NavLink>
+                    <NavLink class="nav-link" href="expenses/report" Match="NavLinkMatch.All">Expenses</NavLink>
                 </div>
                 <div class="nav-item">
-                    <NavLink class="nav-link" href="closing/history">Daily Closings</NavLink>
+                    <NavLink class="nav-link" href="closing/history" Match="NavLinkMatch.All">Daily Closings</NavLink>
                 </div>
             </NavGroup>
         </AuthorizeView>
 
         <AuthorizeView Roles="Owner">
             <div class="nav-item">
-                <NavLink class="nav-link" href="menu">Menu</NavLink>
+                <NavLink class="nav-link" href="menu" Match="NavLinkMatch.All">Menu</NavLink>
             </div>
         </AuthorizeView>
     </nav>

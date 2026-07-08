@@ -6,18 +6,26 @@ namespace KayeDM.Tests.Navigation;
 public class NavRouteMatcherTests
 {
     [Theory]
-    [InlineData("/expenses/report", "expenses", true)]
     [InlineData("/expenses", "expenses", true)]
-    [InlineData("expenses/categories", "expenses", true)]
+    [InlineData("/expenses/report", "expenses", false)]
+    [InlineData("expenses/categories", "expenses", false)]
     [InlineData("/pos", "expenses", false)]
     [InlineData("/expensesreport", "expenses", false)]
-    public void IsActive_MatchesExactOrNestedPrefix(string currentPath, string prefix, bool expected)
+    public void IsActive_MatchesExactRouteOnly(string currentPath, string route, bool expected)
     {
-        NavRouteMatcher.IsActive(currentPath, new[] { prefix }).Should().Be(expected);
+        NavRouteMatcher.IsActive(currentPath, new[] { route }).Should().Be(expected);
     }
 
     [Fact]
-    public void IsActive_MatchesAnyOfMultiplePrefixes()
+    public void IsActive_DoesNotMatchSiblingRouteMovedToAnotherGroup()
+    {
+        // expenses/report lives in the Reports group, not Expenses, even
+        // though it's nested under the same URL segment.
+        NavRouteMatcher.IsActive("/expenses/report", new[] { "expenses", "expenses/categories" }).Should().BeFalse();
+    }
+
+    [Fact]
+    public void IsActive_MatchesAnyOfMultipleRoutes()
     {
         NavRouteMatcher.IsActive("/closing", new[] { "pos", "closing" }).Should().BeTrue();
     }
