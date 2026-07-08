@@ -88,7 +88,7 @@
                                 <td>@row.CategoryName</td>
                                 @foreach (var month in _summary.Months)
                                 {
-                                    <td class="report-table__money">@FormatPeso(row.AmountsByMonth[month])</td>
+                                    <td class="report-table__money">@MoneyOrDash(row.AmountsByMonth[month])</td>
                                 }
                                 <td class="report-table__money">@FormatPeso(row.Total)</td>
                             </tr>
@@ -99,7 +99,7 @@
                             <th>Grand Total</th>
                             @foreach (var month in _summary.Months)
                             {
-                                <th class="report-table__money-head">@FormatPeso(_summary.TotalsByMonth[month])</th>
+                                <th class="report-table__money-head">@MoneyOrDash(_summary.TotalsByMonth[month])</th>
                             }
                             <th class="report-table__money-head">@FormatPeso(_summary.GrandTotal)</th>
                         </tr>
@@ -112,7 +112,7 @@
 
 @code {
     private List<ExpenseCategoryDto> _categories = new();
-    private DateOnly _from = DateOnly.FromDateTime(new DateTime(DateTime.Now.Year, DateTime.Now.Month, 1));
+    private DateOnly _from = DateOnly.FromDateTime(DateTime.Now.AddDays(-29));
     private DateOnly _to = DateOnly.FromDateTime(DateTime.Now);
     private int _categoryId;
     private ExpenseMonthlySummaryResult? _summary;
@@ -149,6 +149,21 @@
             _isLoading = false;
         }
     }
+
+    private static RenderFragment MoneyOrDash(decimal amount) => builder =>
+    {
+        if (amount == 0m)
+        {
+            builder.OpenElement(0, "span");
+            builder.AddAttribute(1, "class", "report-table__zero");
+            builder.AddContent(2, "—");
+            builder.CloseElement();
+        }
+        else
+        {
+            builder.AddContent(0, FormatPeso(amount));
+        }
+    };
 
     private static string FormatMonthLabel(string monthKey) =>
         DateOnly.ParseExact(monthKey + "-01", "yyyy-MM-dd", CultureInfo.InvariantCulture).ToString("MMM yyyy", CultureInfo.InvariantCulture);

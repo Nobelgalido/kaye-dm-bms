@@ -233,6 +233,11 @@ h1:focus {
     text-align: right;
 }
 
+.report-table__zero {
+    color: var(--ink-soft);
+    opacity: 0.55;
+}
+
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after {
     animation-duration: 0.001ms !important;

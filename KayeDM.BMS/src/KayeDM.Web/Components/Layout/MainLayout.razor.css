@@ -19,6 +19,7 @@
 
 .app-shell__content {
     max-width: 1240px;
+    margin: 0 auto;
     padding: var(--s-6);
     animation: fade-up var(--t-base) var(--ease);
 }
