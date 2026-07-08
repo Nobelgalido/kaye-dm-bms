@@ -54,14 +54,146 @@ a, .btn-link {
     color: var(--route-blue);
 }
 
-.btn-primary {
+/* Buttons — overrides Bootstrap's .btn/.btn-* palette so every CRUD page's
+   existing markup (btn-primary, btn-success, btn-secondary, btn-outline-*,
+   btn-danger, btn-link, btn-sm, btn-lg) matches the design system without
+   having to rewrite each page's button classes. */
+.btn {
+    height: 40px;
+    padding: 0 var(--s-4);
+    border: 1px solid transparent;
+    border-radius: var(--r-sm);
+    font-family: var(--font-body);
+    font-weight: 600;
+    font-size: 0.875rem;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: var(--s-2);
+    cursor: pointer;
+    transition: background-color var(--t-fast) var(--ease), transform var(--t-fast) var(--ease);
+}
+
+.btn:active:not(:disabled) {
+    transform: scale(0.97);
+}
+
+.btn:disabled {
+    opacity: 0.45;
+    cursor: not-allowed;
+}
+
+.btn-primary,
+.btn-success {
     color: #fff;
     background-color: var(--route-blue);
     border-color: var(--route-blue);
 }
 
-.btn:focus, .btn:active:focus, .btn-link.nav-link:focus, .form-control:focus, .form-check-input:focus {
-  box-shadow: 0 0 0 0.1rem white, 0 0 0 0.25rem var(--route-blue);
+.btn-primary:hover:not(:disabled),
+.btn-success:hover:not(:disabled) {
+    background-color: color-mix(in srgb, var(--route-blue) 94%, black);
+}
+
+.btn-secondary,
+.btn-outline-primary,
+.btn-outline-secondary {
+    background-color: var(--surface);
+    border-color: var(--line);
+    color: var(--ink);
+}
+
+.btn-secondary:hover:not(:disabled),
+.btn-outline-primary:hover:not(:disabled),
+.btn-outline-secondary:hover:not(:disabled) {
+    background-color: var(--route-blue-tint);
+}
+
+.btn-danger {
+    background-color: var(--sili-coral);
+    border-color: var(--sili-coral);
+    color: #fff;
+}
+
+.btn-danger:hover:not(:disabled) {
+    background-color: color-mix(in srgb, var(--sili-coral) 90%, black);
+}
+
+.btn-outline-danger {
+    background-color: var(--surface);
+    border-color: var(--line);
+    color: var(--sili-coral);
+}
+
+.btn-outline-danger:hover:not(:disabled) {
+    background-color: var(--danger-bg);
+}
+
+.btn-sm {
+    height: 32px;
+    padding: 0 var(--s-3);
+    font-size: 0.8125rem;
+}
+
+.btn-lg {
+    height: 56px;
+    font-size: 1.0625rem;
+}
+
+.btn:focus-visible,
+.form-control:focus-visible,
+.form-check-input:focus-visible {
+    outline: 2px solid var(--route-blue);
+    outline-offset: 2px;
+}
+
+/* Form controls — overrides Bootstrap's .form-control so every EditForm
+   (InputText/InputNumber/InputSelect/InputDate) matches the field spec. */
+.form-control {
+    height: 40px;
+    padding: 0 var(--s-3);
+    border: 1px solid var(--line);
+    border-radius: var(--r-sm);
+    font-family: var(--font-body);
+    font-size: 1rem;
+    background: var(--surface);
+    color: var(--ink);
+}
+
+.form-control:focus {
+    border-color: var(--route-blue);
+    box-shadow: none;
+}
+
+.form-control.invalid {
+    border-color: var(--sili-coral);
+}
+
+textarea.form-control {
+    height: auto;
+    padding: var(--s-2) var(--s-3);
+}
+
+/* Status badges for Active/Inactive rows across Menu, Bus Companies,
+   Expense Categories. */
+.badge-status {
+    display: inline-flex;
+    align-items: center;
+    height: 22px;
+    padding: 0 var(--s-3);
+    border-radius: var(--r-full);
+    font-size: 0.75rem;
+    font-weight: 600;
+}
+
+.badge-status--active {
+    background: var(--success-bg);
+    color: var(--palay-green);
+}
+
+.badge-status--inactive {
+    background: var(--line);
+    color: var(--ink-soft);
 }
 
 .content {
@@ -186,6 +318,23 @@ h1:focus {
     grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
     gap: var(--s-4);
     margin-bottom: var(--s-5);
+}
+
+.report-page__subtitle {
+    font-family: var(--font-body);
+    font-weight: 600;
+    color: var(--ink-soft);
+    margin: calc(-1 * var(--s-3)) 0 var(--s-4);
+}
+
+/* Section heading for a second block on a page (e.g. "Today's Trip Board"
+   below an entry form) — a lighter-weight companion to PageHeader. */
+.section-heading {
+    font-family: var(--font-display);
+    font-weight: 700;
+    font-size: 1.25rem;
+    color: var(--ink);
+    margin: var(--s-6) 0 var(--s-4);
 }
 
 /* Report data table — money right-aligned in tabular Plex Mono. */

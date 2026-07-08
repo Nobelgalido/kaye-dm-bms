@@ -19,16 +19,20 @@
 }
 else if (_batches.Count == 0)
 {
-    <p>No batches logged today — nothing to waste yet.</p>
+    <ReportEmptyState Message="No batches logged today — nothing to waste yet.">
+        <Glyph>
+            <Icon Name="waste" Size="40" />
+        </Glyph>
+    </ReportEmptyState>
 }
 else
 {
     <EditForm Model="_form" OnValidSubmit="SubmitAsync">
         <DataAnnotationsValidator />
         <ValidationSummary />
-        <div class="mb-2">
+        <div class="field">
             <label>Batch</label>
-            <InputSelect class="form-control" @bind-Value="_form.DishBatchId">
+            <InputSelect @bind-Value="_form.DishBatchId">
                 <option value="0">-- select --</option>
                 @foreach (var batch in _batches)
                 {
@@ -36,13 +40,13 @@ else
                 }
             </InputSelect>
         </div>
-        <div class="mb-2">
+        <div class="field">
             <label>Trays Wasted</label>
-            <InputNumber class="form-control" @bind-Value="_form.TraysWasted" step="0.5" />
+            <InputNumber @bind-Value="_form.TraysWasted" step="0.5" />
         </div>
-        <div class="mb-2">
+        <div class="field">
             <label>Reason</label>
-            <InputSelect class="form-control" @bind-Value="_form.Reason">
+            <InputSelect @bind-Value="_form.Reason">
                 @foreach (var reason in Enum.GetValues<WasteReason>())
                 {
                     <option value="@reason">@reason</option>

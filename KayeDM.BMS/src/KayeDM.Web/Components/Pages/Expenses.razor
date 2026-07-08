@@ -16,13 +16,13 @@
 <EditForm Model="_form" OnValidSubmit="SubmitAsync">
     <DataAnnotationsValidator />
     <ValidationSummary />
-    <div class="mb-2">
+    <div class="field">
         <label>Date</label>
-        <InputDate class="form-control" @bind-Value="_form.Date" />
+        <InputDate @bind-Value="_form.Date" />
     </div>
-    <div class="mb-2">
+    <div class="field">
         <label>Category</label>
-        <InputSelect class="form-control" @bind-Value="_form.ExpenseCategoryId">
+        <InputSelect @bind-Value="_form.ExpenseCategoryId">
             <option value="0">-- select --</option>
             @foreach (var category in _categories)
             {
@@ -30,30 +30,30 @@
             }
         </InputSelect>
     </div>
-    <div class="mb-2">
+    <div class="field">
         <label>Description</label>
-        <InputText class="form-control" @bind-Value="_form.Description" />
+        <InputText @bind-Value="_form.Description" />
     </div>
-    <div class="mb-2">
+    <div class="field">
         <label>Amount</label>
-        <InputNumber class="form-control" @bind-Value="_form.Amount" step="0.01" />
+        <InputNumber @bind-Value="_form.Amount" step="0.01" />
     </div>
-    <div class="mb-2">
+    <div class="field">
         <label>Payment Method</label>
-        <InputSelect class="form-control" @bind-Value="_form.PaymentMethod">
+        <InputSelect @bind-Value="_form.PaymentMethod">
             @foreach (var method in Enum.GetValues<ExpensePaymentMethod>())
             {
                 <option value="@method">@method</option>
             }
         </InputSelect>
     </div>
-    <div class="mb-2">
+    <div class="field">
         <label>Vendor (optional)</label>
-        <InputText class="form-control" @bind-Value="_form.Vendor" />
+        <InputText @bind-Value="_form.Vendor" />
     </div>
-    <div class="mb-2">
+    <div class="field">
         <label>Receipt Ref (optional)</label>
-        <InputText class="form-control" @bind-Value="_form.ReceiptRef" />
+        <InputText @bind-Value="_form.ReceiptRef" />
     </div>
     <button type="submit" class="btn btn-success">@(_editingId is null ? "Add Expense" : "Save Changes")</button>
     @if (_editingId is not null)
@@ -67,22 +67,27 @@
     <div class="alert alert-danger">@_error</div>
 }
 
-<h2 class="mt-4">Filter</h2>
-<div class="mb-3">
-    <label>From</label>
-    <input type="date" class="form-control" @bind="_filterFrom" />
-    <label>To</label>
-    <input type="date" class="form-control" @bind="_filterTo" />
-    <label>Category</label>
-    <select class="form-control" @bind="_filterCategoryId">
-        <option value="0">-- all --</option>
-        @foreach (var category in _categories)
-        {
-            <option value="@category.Id">@category.Name</option>
-        }
-    </select>
-    <button class="btn btn-primary mt-2" @onclick="LoadExpensesAsync">Filter</button>
-</div>
+<h2 class="section-heading">Filter</h2>
+<ReportFilterBar OnRun="LoadExpensesAsync" RunLabel="Filter" IsLoading="_isFiltering">
+    <div class="field">
+        <label for="expenses-filter-from">From</label>
+        <input id="expenses-filter-from" type="date" @bind="_filterFrom" />
+    </div>
+    <div class="field">
+        <label for="expenses-filter-to">To</label>
+        <input id="expenses-filter-to" type="date" @bind="_filterTo" />
+    </div>
+    <div class="field">
+        <label for="expenses-filter-category">Category</label>
+        <select id="expenses-filter-category" @bind="_filterCategoryId">
+            <option value="0">-- all --</option>
+            @foreach (var category in _categories)
+            {
+                <option value="@category.Id">@category.Name</option>
+            }
+        </select>
+    </div>
+</ReportFilterBar>
 
 @if (_expenses is null)
 {
@@ -90,17 +95,21 @@
 }
 else if (_expenses.Count == 0)
 {
-    <p>No expenses match this filter.</p>
+    <ReportEmptyState Message="No expenses match this filter — try widening the dates or clearing the category.">
+        <Glyph>
+            <Icon Name="wallet" Size="40" />
+        </Glyph>
+    </ReportEmptyState>
 }
 else
 {
-    <table class="table">
+    <table class="report-table">
         <thead>
             <tr>
                 <th>Date</th>
                 <th>Category</th>
                 <th>Description</th>
-                <th>Amount</th>
+                <th class="report-table__money-head">Amount</th>
                 <th>Method</th>
                 <th>Vendor</th>
                 <th></th>
@@ -113,7 +122,7 @@ else
                     <td>@expense.Date.ToString("MMM d, yyyy")</td>
                     <td>@expense.CategoryName</td>
                     <td>@expense.Description</td>
-                    <td>@FormatPeso(expense.Amount)</td>
+                    <td class="report-table__money">@FormatPeso(expense.Amount)</td>
                     <td>@expense.PaymentMethod</td>
                     <td>@expense.Vendor</td>
                     <td>
@@ -136,6 +145,7 @@ else
     private DateOnly? _filterFrom;
     private DateOnly? _filterTo;
     private int _filterCategoryId;
+    private bool _isFiltering;
 
     protected override async Task OnInitializedAsync()
     {
@@ -145,9 +155,17 @@ else
 
     private async Task LoadExpensesAsync()
     {
-        int? categoryId = _filterCategoryId > 0 ? _filterCategoryId : null;
+        _isFiltering = true;
+        try
+        {
+            int? categoryId = _filterCategoryId > 0 ? _filterCategoryId : null;
 
-        _expenses = await ExpenseService.GetExpensesAsync(_filterFrom, _filterTo, categoryId);
+            _expenses = await ExpenseService.GetExpensesAsync(_filterFrom, _filterTo, categoryId);
+        }
+        finally
+        {
+            _isFiltering = false;
+        }
     }
 
     private void StartEdit(ExpenseDto expense)

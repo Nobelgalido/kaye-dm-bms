@@ -8,9 +8,11 @@
 
 <PageTitle>Expense Categories — Kaye & DM BMS</PageTitle>
 
-<PageHeader Title="Expense Categories" />
-
-<button class="btn btn-primary mb-3" @onclick="StartCreate">+ Add Category</button>
+<PageHeader Title="Expense Categories">
+    <ActionContent>
+        <button class="btn btn-primary" @onclick="StartCreate">+ Add Category</button>
+    </ActionContent>
+</PageHeader>
 
 @if (_categories is null)
 {
@@ -18,11 +20,15 @@
 }
 else if (_categories.Count == 0)
 {
-    <p>No expense categories yet.</p>
+    <ReportEmptyState Message="No expense categories yet — add the first one to start logging expenses.">
+        <Glyph>
+            <Icon Name="tag" Size="40" />
+        </Glyph>
+    </ReportEmptyState>
 }
 else
 {
-    <table class="table">
+    <table class="report-table">
         <thead>
             <tr>
                 <th>Name</th>
@@ -37,7 +43,11 @@ else
                 <tr>
                     <td>@category.Name</td>
                     <td>@category.Type</td>
-                    <td>@(category.IsActive ? "Active" : "Inactive")</td>
+                    <td>
+                        <span class="badge-status @(category.IsActive ? "badge-status--active" : "badge-status--inactive")">
+                            @(category.IsActive ? "Active" : "Inactive")
+                        </span>
+                    </td>
                     <td>
                         <button class="btn btn-sm btn-secondary" @onclick="() => StartEdit(category)">Edit</button>
                         <button class="btn btn-sm btn-outline-danger" @onclick="() => ToggleActiveAsync(category)">
@@ -55,13 +65,13 @@ else
     <EditForm Model="_form" OnValidSubmit="SaveAsync">
         <DataAnnotationsValidator />
         <ValidationSummary />
-        <div class="mb-2">
+        <div class="field">
             <label>Name</label>
-            <InputText class="form-control" @bind-Value="_form.Name" />
+            <InputText @bind-Value="_form.Name" />
         </div>
-        <div class="mb-2">
+        <div class="field">
             <label>Type</label>
-            <InputSelect class="form-control" @bind-Value="_form.Type">
+            <InputSelect @bind-Value="_form.Type">
                 @foreach (var type in Enum.GetValues<ExpenseCategoryType>())
                 {
                     <option value="@type">@type</option>

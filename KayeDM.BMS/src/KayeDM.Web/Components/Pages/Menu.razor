@@ -8,9 +8,11 @@
 
 <PageTitle>Menu — Kaye & DM BMS</PageTitle>
 
-<PageHeader Title="Menu Items" />
-
-<button class="btn btn-primary mb-3" @onclick="StartCreate">+ Add Item</button>
+<PageHeader Title="Menu Items">
+    <ActionContent>
+        <button class="btn btn-primary" @onclick="StartCreate">+ Add Item</button>
+    </ActionContent>
+</PageHeader>
 
 @if (_items is null)
 {
@@ -18,17 +20,21 @@
 }
 else if (_items.Count == 0)
 {
-    <p>No menu items yet.</p>
+    <ReportEmptyState Message="No menu items yet — add the first dish to get the POS grid started.">
+        <Glyph>
+            <Icon Name="menu" Size="40" />
+        </Glyph>
+    </ReportEmptyState>
 }
 else
 {
-    <table class="table">
+    <table class="report-table">
         <thead>
             <tr>
                 <th>Name</th>
                 <th>Category</th>
-                <th>Price</th>
-                <th>Sort</th>
+                <th class="report-table__money-head">Price</th>
+                <th class="report-table__money-head">Sort</th>
                 <th>Status</th>
                 <th></th>
             </tr>
@@ -39,9 +45,13 @@ else
                 <tr>
                     <td>@item.Name</td>
                     <td>@item.Category</td>
-                    <td>@FormatPeso(item.Price)</td>
-                    <td>@item.SortOrder</td>
-                    <td>@(item.IsActive ? "Active" : "Inactive")</td>
+                    <td class="report-table__money">@FormatPeso(item.Price)</td>
+                    <td class="report-table__money">@item.SortOrder</td>
+                    <td>
+                        <span class="badge-status @(item.IsActive ? "badge-status--active" : "badge-status--inactive")">
+                            @(item.IsActive ? "Active" : "Inactive")
+                        </span>
+                    </td>
                     <td>
                         <button class="btn btn-sm btn-secondary" @onclick="() => StartEdit(item)">Edit</button>
                         <button class="btn btn-sm btn-outline-danger" @onclick="() => ToggleActiveAsync(item)">
@@ -59,26 +69,26 @@ else
     <EditForm Model="_form" OnValidSubmit="SaveAsync">
         <DataAnnotationsValidator />
         <ValidationSummary />
-        <div class="mb-2">
+        <div class="field">
             <label>Name</label>
-            <InputText class="form-control" @bind-Value="_form.Name" />
+            <InputText @bind-Value="_form.Name" />
         </div>
-        <div class="mb-2">
+        <div class="field">
             <label>Category</label>
-            <InputSelect class="form-control" @bind-Value="_form.Category">
+            <InputSelect @bind-Value="_form.Category">
                 @foreach (var category in Enum.GetValues<MenuCategory>())
                 {
                     <option value="@category">@category</option>
                 }
             </InputSelect>
         </div>
-        <div class="mb-2">
+        <div class="field">
             <label>Price</label>
-            <InputNumber class="form-control" @bind-Value="_form.Price" />
+            <InputNumber @bind-Value="_form.Price" />
         </div>
-        <div class="mb-2">
+        <div class="field">
             <label>Sort Order</label>
-            <InputNumber class="form-control" @bind-Value="_form.SortOrder" />
+            <InputNumber @bind-Value="_form.SortOrder" />
         </div>
         <button type="submit" class="btn btn-success">Save</button>
         <button type="button" class="btn btn-link" @onclick="CancelEdit">Cancel</button>

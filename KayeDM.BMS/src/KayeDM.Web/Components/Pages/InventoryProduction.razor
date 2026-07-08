@@ -15,9 +15,9 @@
 <EditForm Model="_form" OnValidSubmit="SubmitAsync">
     <DataAnnotationsValidator />
     <ValidationSummary />
-    <div class="mb-2">
+    <div class="field">
         <label>Dish</label>
-        <InputSelect class="form-control" @bind-Value="_form.MenuItemId">
+        <InputSelect @bind-Value="_form.MenuItemId">
             <option value="0">-- select --</option>
             @foreach (var item in _menuItems)
             {
@@ -25,13 +25,13 @@
             }
         </InputSelect>
     </div>
-    <div class="mb-2">
+    <div class="field">
         <label>Trays Produced</label>
-        <InputNumber class="form-control" @bind-Value="_form.TraysProduced" step="0.5" />
+        <InputNumber @bind-Value="_form.TraysProduced" step="0.5" />
     </div>
-    <div class="mb-2">
+    <div class="field">
         <label>Servings per Tray</label>
-        <InputNumber class="form-control" @bind-Value="_form.ServingsPerTray" />
+        <InputNumber @bind-Value="_form.ServingsPerTray" />
     </div>
     <button type="submit" class="btn btn-success">Log Batch</button>
 </EditForm>
@@ -41,7 +41,7 @@
     <div class="alert alert-danger">@_error</div>
 }
 
-<h2 class="mt-4">Today's Batches</h2>
+<h2 class="section-heading">Today's Batches</h2>
 
 @if (_batches is null)
 {
@@ -49,17 +49,21 @@
 }
 else if (_batches.Count == 0)
 {
-    <p>No batches logged today.</p>
+    <ReportEmptyState Message="No batches logged today — log this morning's production to start the day.">
+        <Glyph>
+            <Icon Name="trays" Size="40" />
+        </Glyph>
+    </ReportEmptyState>
 }
 else
 {
-    <table class="table">
+    <table class="report-table">
         <thead>
             <tr>
                 <th>Dish</th>
-                <th>Trays Produced</th>
-                <th>Servings/Tray</th>
-                <th>Total Servings</th>
+                <th class="report-table__money-head">Trays Produced</th>
+                <th class="report-table__money-head">Servings/Tray</th>
+                <th class="report-table__money-head">Total Servings</th>
                 <th>Produced At</th>
             </tr>
         </thead>
@@ -68,9 +72,9 @@ else
             {
                 <tr>
                     <td>@batch.MenuItemName</td>
-                    <td>@batch.TraysProduced</td>
-                    <td>@batch.ServingsPerTray</td>
-                    <td>@(batch.TraysProduced * batch.ServingsPerTray)</td>
+                    <td class="report-table__money">@batch.TraysProduced</td>
+                    <td class="report-table__money">@batch.ServingsPerTray</td>
+                    <td class="report-table__money">@(batch.TraysProduced * batch.ServingsPerTray)</td>
                     <td>@batch.ProducedAt.ToString("h:mm tt")</td>
                 </tr>
             }
