@@ -1,64 +1,27 @@
-.closing-history-table {
-    width: 100%;
-    border-collapse: collapse;
-    background: var(--surface);
-    border: 1px solid var(--line);
-    border-radius: var(--r-md);
-    overflow: hidden;
-}
-
-.closing-history-table thead tr {
-    background: var(--paper);
-}
-
-.closing-history-table th {
-    text-align: left;
-    padding: var(--s-3) var(--s-4);
-    font-family: var(--font-body);
-    font-weight: 600;
-    font-size: 0.75rem;
-    letter-spacing: 0.06em;
-    text-transform: uppercase;
+.closing-history-loading {
     color: var(--ink-soft);
-    border-bottom: 1px solid var(--line);
 }
 
-.closing-history-table__money-head {
-    text-align: right;
-}
-
-.closing-history-table__row {
+.closing-history-row {
     height: 48px;
     cursor: pointer;
     transition: background-color var(--t-fast) var(--ease);
 }
 
-.closing-history-table__row:hover {
+.closing-history-row:hover {
     background-color: var(--route-blue-tint);
 }
 
-.closing-history-table__row:focus-visible {
+.closing-history-row:focus-visible {
     outline: 2px solid var(--route-blue);
     outline-offset: 2px;
 }
 
-.closing-history-table__row td {
-    padding: var(--s-2) var(--s-4);
-    border-bottom: 1px solid var(--line);
-}
-
-.closing-history-table__money {
-    font-family: var(--font-mono);
-    font-weight: 500;
-    font-variant-numeric: tabular-nums;
-    text-align: right;
-}
-
-.closing-history-table__money--positive {
+.closing-history-row__money--positive {
     color: var(--palay-green);
 }
 
-.closing-history-table__money--negative {
+.closing-history-row__money--negative {
     color: var(--sili-coral);
 }
 
@@ -94,49 +57,8 @@
     color: var(--ink);
 }
 
-.closing-history-empty {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    text-align: center;
-    gap: var(--s-3);
-    background: var(--surface);
-    border: 1px solid var(--line);
-    border-radius: var(--r-md);
-    box-shadow: var(--shadow-1);
-    padding: var(--s-7) var(--s-5);
-}
-
-.closing-history-empty__glyph {
-    color: var(--ink-soft);
-}
-
-.closing-history-empty__text {
-    color: var(--ink-soft);
-    margin: 0;
-    max-width: 420px;
-}
-
-.closing-history-empty__action {
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    height: 40px;
-    padding: 0 var(--s-4);
-    background: var(--route-blue);
-    color: white;
-    text-decoration: none;
-    border-radius: var(--r-sm);
-    font-weight: 600;
-}
-
-.closing-history-empty__action:focus-visible {
-    outline: 2px solid var(--route-blue);
-    outline-offset: 2px;
-}
-
 @media (prefers-reduced-motion: reduce) {
-    .closing-history-table__row {
+    .closing-history-row {
         transition: none;
     }
 }

@@ -6,76 +6,112 @@
 
 <PageTitle>Variance Report — Kaye & DM BMS</PageTitle>
 
-<PageHeader Title="Produced / Sold / Wasted Variance" />
+<div class="report-page">
+    <PageHeader Title="Produced / Sold / Wasted Variance" />
 
-<div class="mb-3">
-    <label>From</label>
-    <input type="date" class="form-control" @bind="_from" />
+    <ReportFilterBar OnRun="LoadAsync" IsLoading="_isLoading">
+        <div class="field">
+            <label for="variance-from">From</label>
+            <input id="variance-from" type="date" @bind="_from" />
+        </div>
+        <div class="field @(_error is not null ? "field--invalid" : null)">
+            <label for="variance-to">To</label>
+            <input id="variance-to" type="date" @bind="_to" />
+            @if (_error is not null)
+            {
+                <span class="field__error">@_error</span>
+            }
+        </div>
+    </ReportFilterBar>
 
-    <label>To</label>
-    <input type="date" class="form-control" @bind="_to" />
-
-    <button class="btn btn-primary mt-2" @onclick="LoadAsync">Run Report</button>
-</div>
-
-@if (_error is not null)
-{
-    <div class="alert alert-danger">@_error</div>
-}
-
-@if (_rows is not null)
-{
-    @if (_rows.Count == 0)
+    @if (_rows is null)
     {
-        <p>No batches in this date range.</p>
+        <ReportEmptyState Message="Choose a date range and run the report to see produced, sold, and wasted trays.">
+            <Glyph>
+                <Icon Name="reports-variance" Size="40" />
+            </Glyph>
+        </ReportEmptyState>
     }
     else
     {
-        <table class="table">
-            <thead>
-                <tr>
-                    <th>Date</th>
-                    <th>Dish</th>
-                    <th>Produced</th>
-                    <th>Sold</th>
-                    <th>Wasted</th>
-                    <th>Variance %</th>
-                </tr>
-            </thead>
-            <tbody>
-                @foreach (var row in _rows)
-                {
-                    <tr>
-                        <td>@row.Date.ToString("MMM d, yyyy")</td>
-                        <td>@row.MenuItemName</td>
-                        <td>@row.Produced</td>
-                        <td>@row.Sold</td>
-                        <td>@row.Wasted</td>
-                        <td>@row.VariancePercent%</td>
-                    </tr>
-                }
-            </tbody>
-        </table>
+        <div class="report-summary">
+            <KpiCard Label="Batches" NumericValue="_rows.Count" Decimals="0" Animate="_resultsVersion == 1" />
+            <KpiCard Label="Total Produced" NumericValue="_rows.Sum(r => r.Produced)" Decimals="0" Animate="_resultsVersion == 1" />
+            <KpiCard Label="Total Wasted" NumericValue="_rows.Sum(r => r.Wasted)" Decimals="0" Animate="_resultsVersion == 1" />
+            <KpiCard Label="Worst Variance" DisplayText="@(WorstRow?.MenuItemName ?? "—")" SubText="@(WorstRow is not null ? $"{WorstRow.VariancePercent:0.0}%" : null)" />
+        </div>
+
+        <ReportTableFrame RefreshKey="_resultsVersion">
+            @if (_rows.Count == 0)
+            {
+                <ReportEmptyState Message="No batches in this date range — try widening the dates.">
+                    <Glyph>
+                        <Icon Name="reports-variance" Size="40" />
+                    </Glyph>
+                </ReportEmptyState>
+            }
+            else
+            {
+                <table class="report-table">
+                    <thead>
+                        <tr>
+                            <th>Date</th>
+                            <th>Dish</th>
+                            <th class="report-table__money-head">Produced</th>
+                            <th class="report-table__money-head">Sold</th>
+                            <th class="report-table__money-head">Wasted</th>
+                            <th class="report-table__money-head">Variance %</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach (var row in _rows)
+                        {
+                            <tr>
+                                <td>@row.Date.ToString("MMM d, yyyy")</td>
+                                <td>@row.MenuItemName</td>
+                                <td class="report-table__money">@row.Produced</td>
+                                <td class="report-table__money">@row.Sold</td>
+                                <td class="report-table__money">@row.Wasted</td>
+                                <td class="report-table__money">@row.VariancePercent.ToString("0.0")%</td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            }
+        </ReportTableFrame>
     }
-}
+</div>
 
 @code {
-    private DateOnly _from = DateOnly.FromDateTime(DateTime.Now);
+    private DateOnly _from = DateOnly.FromDateTime(DateTime.Now.AddDays(-6));
     private DateOnly _to = DateOnly.FromDateTime(DateTime.Now);
     private List<VarianceRow>? _rows;
     private string? _error;
+    private bool _isLoading;
+    private int _resultsVersion;
+
+    private VarianceRow? WorstRow => _rows?.OrderByDescending(r => Math.Abs(r.VariancePercent)).FirstOrDefault();
 
     private async Task LoadAsync()
     {
         _error = null;
-        _rows = null;
 
         if (_to < _from)
         {
             _error = "'To' date must be on or after 'From' date.";
+            _rows = null;
             return;
         }
 
-        _rows = await InventoryService.GetVarianceAsync(_from, _to);
+        _isLoading = true;
+        try
+        {
+            _rows = await InventoryService.GetVarianceAsync(_from, _to);
+            _resultsVersion++;
+        }
+        finally
+        {
+            _isLoading = false;
+        }
     }
 }
