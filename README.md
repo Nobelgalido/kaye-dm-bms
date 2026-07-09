@@ -70,7 +70,12 @@ Migrations are never squashed or regenerated in this repo. All 10 are kept in gi
 
 ## Screenshots
 
-_Coming soon — POS, Analytics Dashboard, Reports, and the mobile shell._
+| | |
+|---|---|
+| ![Analytics dashboard with sales-by-hour chart, bus-arrival markers, and KPI summary](docs/screenshots/dashboard.png) | ![POS in crew-meal mode with a four-item ticket and the yellow CREW MEAL banner](docs/screenshots/pos-crew-meal.png) |
+| ![Reports landing page with cards for Crew Meals, Variance, Expenses, and Daily Closings](docs/screenshots/reports-landing.png) | ![Expense report for the last 30 days, broken down by category and month](docs/screenshots/expense-report.png) |
+
+![Login page](docs/screenshots/login.png)
 
 ## Run it
 
