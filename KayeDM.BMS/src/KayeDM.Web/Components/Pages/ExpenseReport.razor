@@ -1,104 +1,172 @@
 @page "/expenses/report"
 @attribute [Authorize(Roles = "Owner")]
 @using Microsoft.AspNetCore.Authorization
+@using System.Globalization
 @using KayeDM.Application.Expenses
 @inject IExpenseService ExpenseService
 
 <PageTitle>Expense Report — Kaye & DM BMS</PageTitle>
 
-<PageHeader Title="Monthly Expense Summary" />
+<div class="report-page">
+    <PageHeader Title="Expense Report" />
 
-<div class="mb-3">
-    <label>From</label>
-    <input type="date" class="form-control" @bind="_from" />
-    <label>To</label>
-    <input type="date" class="form-control" @bind="_to" />
-    <label>Category</label>
-    <select class="form-control" @bind="_categoryId">
-        <option value="0">-- all --</option>
-        @foreach (var category in _categories)
-        {
-            <option value="@category.Id">@category.Name</option>
-        }
-    </select>
-    <button class="btn btn-primary mt-2" @onclick="LoadAsync">Run Report</button>
-</div>
+    <ReportFilterBar OnRun="LoadAsync" IsLoading="_isLoading">
+        <div class="field">
+            <label for="expense-report-from">From</label>
+            <input id="expense-report-from" type="date" @bind="_from" />
+        </div>
+        <div class="field @(_error is not null ? "field--invalid" : null)">
+            <label for="expense-report-to">To</label>
+            <input id="expense-report-to" type="date" @bind="_to" />
+            @if (_error is not null)
+            {
+                <span class="field__error">@_error</span>
+            }
+        </div>
+        <div class="field">
+            <label for="expense-report-category">Category</label>
+            <select id="expense-report-category" @bind="_categoryId">
+                <option value="0">All categories</option>
+                @foreach (var category in _categories)
+                {
+                    <option value="@category.Id">@category.Name</option>
+                }
+            </select>
+        </div>
+    </ReportFilterBar>
 
-@if (_error is not null)
-{
-    <div class="alert alert-danger">@_error</div>
-}
-
-@if (_summary is not null)
-{
-    @if (_summary.Rows.Count == 0)
+    @if (_summary is null)
     {
-        <p>No expenses in this range.</p>
+        <ReportEmptyState Message="Choose a date range and run the report to see expense totals.">
+            <Glyph>
+                <svg viewBox="0 0 24 24" width="40" height="40" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M6 3h12v18l-3-2-3 2-3-2-3 2Z" />
+                    <path d="M9 8h6" />
+                    <path d="M9 12h6" />
+                </svg>
+            </Glyph>
+        </ReportEmptyState>
     }
     else
     {
-        <table class="table">
-            <thead>
-                <tr>
-                    <th>Category</th>
-                    @foreach (var month in _summary.Months)
-                    {
-                        <th>@month</th>
-                    }
-                    <th>Total</th>
-                </tr>
-            </thead>
-            <tbody>
-                @foreach (var row in _summary.Rows)
-                {
-                    <tr>
-                        <td>@row.CategoryName</td>
-                        @foreach (var month in _summary.Months)
+        <div class="report-summary">
+            <KpiCard Label="Total Spent" NumericValue="_summary.GrandTotal" Prefix="₱" Decimals="2" Animate="_resultsVersion == 1" />
+            <KpiCard Label="Top Category" DisplayText="@(_topCategory?.CategoryName ?? "—")" SubText="@FormatPeso(_topCategory?.Total ?? 0)" />
+            <KpiCard Label="Entries" NumericValue="_entryCount" Decimals="0" Animate="_resultsVersion == 1" />
+        </div>
+
+        <ReportTableFrame RefreshKey="_resultsVersion">
+            @if (_summary.Rows.Count == 0)
+            {
+                <ReportEmptyState Message="No expenses in this range — try widening the dates or clearing the category filter.">
+                    <Glyph>
+                        <svg viewBox="0 0 24 24" width="40" height="40" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+                            <path d="M6 3h12v18l-3-2-3 2-3-2-3 2Z" />
+                            <path d="M9 8h6" />
+                            <path d="M9 12h6" />
+                        </svg>
+                    </Glyph>
+                </ReportEmptyState>
+            }
+            else
+            {
+                <table class="report-table">
+                    <thead>
+                        <tr>
+                            <th>Category</th>
+                            @foreach (var month in _summary.Months)
+                            {
+                                <th class="report-table__money-head">@FormatMonthLabel(month)</th>
+                            }
+                            <th class="report-table__money-head">Total</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach (var row in _summary.Rows)
                         {
-                            <td>@FormatPeso(row.AmountsByMonth[month])</td>
+                            <tr>
+                                <td>@row.CategoryName</td>
+                                @foreach (var month in _summary.Months)
+                                {
+                                    <td class="report-table__money">@MoneyOrDash(row.AmountsByMonth[month])</td>
+                                }
+                                <td class="report-table__money">@FormatPeso(row.Total)</td>
+                            </tr>
                         }
-                        <td>@FormatPeso(row.Total)</td>
-                    </tr>
-                }
-            </tbody>
-            <tfoot>
-                <tr>
-                    <th>Grand Total</th>
-                    @foreach (var month in _summary.Months)
-                    {
-                        <th>@FormatPeso(_summary.TotalsByMonth[month])</th>
-                    }
-                    <th>@FormatPeso(_summary.GrandTotal)</th>
-                </tr>
-            </tfoot>
-        </table>
+                    </tbody>
+                    <tfoot>
+                        <tr>
+                            <th>Grand Total</th>
+                            @foreach (var month in _summary.Months)
+                            {
+                                <th class="report-table__money-head">@MoneyOrDash(_summary.TotalsByMonth[month])</th>
+                            }
+                            <th class="report-table__money-head">@FormatPeso(_summary.GrandTotal)</th>
+                        </tr>
+                    </tfoot>
+                </table>
+            }
+        </ReportTableFrame>
     }
-}
+</div>
 
 @code {
     private List<ExpenseCategoryDto> _categories = new();
-    private DateOnly _from = DateOnly.FromDateTime(new DateTime(DateTime.Now.Year, DateTime.Now.Month, 1));
+    private DateOnly _from = DateOnly.FromDateTime(DateTime.Now.AddDays(-29));
     private DateOnly _to = DateOnly.FromDateTime(DateTime.Now);
     private int _categoryId;
     private ExpenseMonthlySummaryResult? _summary;
+    private ExpenseMonthlySummaryRow? _topCategory;
+    private int _entryCount;
     private string? _error;
+    private bool _isLoading;
+    private int _resultsVersion;
 
     protected override async Task OnInitializedAsync() => _categories = await ExpenseService.GetCategoriesAsync(includeInactive: true);
 
     private async Task LoadAsync()
     {
         _error = null;
-        _summary = null;
 
         if (_to < _from)
         {
             _error = "'To' date must be on or after 'From' date.";
+            _summary = null;
             return;
         }
 
-        int? categoryId = _categoryId > 0 ? _categoryId : null;
-        _summary = await ExpenseService.GetMonthlySummaryAsync(_from, _to, categoryId);
+        _isLoading = true;
+        try
+        {
+            int? categoryId = _categoryId > 0 ? _categoryId : null;
+            _summary = await ExpenseService.GetMonthlySummaryAsync(_from, _to, categoryId);
+            _topCategory = _summary.Rows.OrderByDescending(r => r.Total).FirstOrDefault();
+            _entryCount = (await ExpenseService.GetExpensesAsync(_from, _to, categoryId)).Count;
+            _resultsVersion++;
+        }
+        finally
+        {
+            _isLoading = false;
+        }
     }
 
-    private static string FormatPeso(decimal amount) => string.Format("₱{0:N2}", amount);
+    private static RenderFragment MoneyOrDash(decimal amount) => builder =>
+    {
+        if (amount == 0m)
+        {
+            builder.OpenElement(0, "span");
+            builder.AddAttribute(1, "class", "report-table__zero");
+            builder.AddContent(2, "—");
+            builder.CloseElement();
+        }
+        else
+        {
+            builder.AddContent(0, FormatPeso(amount));
+        }
+    };
+
+    private static string FormatMonthLabel(string monthKey) =>
+        DateOnly.ParseExact(monthKey + "-01", "yyyy-MM-dd", CultureInfo.InvariantCulture).ToString("MMM yyyy", CultureInfo.InvariantCulture);
+
+    private static string FormatPeso(decimal amount) => string.Format(CultureInfo.InvariantCulture, "₱{0:N2}", amount);
 }

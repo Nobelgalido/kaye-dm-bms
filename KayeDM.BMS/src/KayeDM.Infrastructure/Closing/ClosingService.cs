@@ -107,4 +107,22 @@ public class ClosingService : IClosingService
         var target = date.ToDateTime(TimeOnly.MinValue);
         return await db.DailyClosings.AnyAsync(c => c.Date >= target);
     }
+
+    public async Task<List<DailyClosingDto>> GetHistoryAsync()
+    {
+        await using var db = await _dbContextFactory.CreateDbContextAsync();
+
+        // Materialize entities first, then map client-side — DateOnly.FromDateTime
+        // isn't reliably translatable in a Select projection across providers.
+        var closings = await db.DailyClosings
+            .OrderByDescending(c => c.Date)
+            .ToListAsync();
+
+        return closings
+            .Select(c => new DailyClosingDto(
+                c.Id, DateOnly.FromDateTime(c.Date), c.TotalSales, c.CashSales, c.GCashSales,
+                c.OrderCount, c.VoidedCount, c.CrewMealsGiven, c.TotalExpenses, c.NetForDay,
+                c.ClosedById, c.ClosedAt))
+            .ToList();
+    }
 }

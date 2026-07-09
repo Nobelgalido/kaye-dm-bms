@@ -1,15 +1,8 @@
 .app-shell {
     display: flex;
+    width: 100%;
     min-height: 100vh;
     background: var(--paper);
-}
-
-.app-shell__sidebar {
-    width: 260px;
-    flex-shrink: 0;
-    position: sticky;
-    top: 0;
-    height: 100vh;
 }
 
 .app-shell__main {
@@ -19,6 +12,7 @@
 
 .app-shell__content {
     max-width: 1240px;
+    margin: 0 auto;
     padding: var(--s-6);
     animation: fade-up var(--t-base) var(--ease);
 }
@@ -37,12 +31,6 @@
 @media (max-width: 899.98px) {
     .app-shell {
         flex-direction: column;
-    }
-
-    .app-shell__sidebar {
-        width: 100%;
-        height: auto;
-        position: static;
     }
 
     .app-shell__content {

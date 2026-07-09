@@ -1,0 +1,9 @@
+**/bin/
+**/obj/
+**/.vs/
+**/.vscode/
+.git/
+.claude/
+.playwright-mcp/
+.superpowers/
+docs/

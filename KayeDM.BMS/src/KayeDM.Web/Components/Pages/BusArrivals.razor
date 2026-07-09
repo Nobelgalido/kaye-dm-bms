@@ -10,36 +10,41 @@
 
 <PageHeader Title="Bus Arrivals" />
 
-<EditForm Model="_form" OnValidSubmit="LogArrivalAsync">
-    <DataAnnotationsValidator />
-    <ValidationSummary />
-    <div class="mb-2">
-        <label>Company</label>
-        <InputSelect class="form-control" @bind-Value="_form.BusCompanyId">
-            <option value="0">-- select --</option>
-            @foreach (var company in _companies)
-            {
-                <option value="@company.Id">@company.Name</option>
-            }
-        </InputSelect>
-    </div>
-    <div class="mb-2">
-        <label>Bus Number</label>
-        <InputText class="form-control" @bind-Value="_form.BusNumber" />
-    </div>
-    <div class="mb-2">
-        <label>Route</label>
-        <InputText class="form-control" @bind-Value="_form.Route" />
-    </div>
-    <button type="submit" class="btn btn-success">Bus Arrived</button>
-</EditForm>
+<div class="entry-form-card">
+    <EditForm Model="_form" OnValidSubmit="LogArrivalAsync">
+        <DataAnnotationsValidator />
+        <ValidationSummary />
+        <div class="entry-form-card__row">
+            <div class="field">
+                <label>Company</label>
+                <InputSelect @bind-Value="_form.BusCompanyId">
+                    <option value="0">-- select --</option>
+                    @foreach (var company in _companies)
+                    {
+                        <option value="@company.Id">@company.Name</option>
+                    }
+                </InputSelect>
+            </div>
+            <div class="field">
+                <label>Bus Number</label>
+                <InputText @bind-Value="_form.BusNumber" />
+            </div>
+            <div class="field">
+                <label>Route</label>
+                <InputText @bind-Value="_form.Route" />
+            </div>
+            <button type="submit" class="btn btn-success">Bus Arrived</button>
+        </div>
+    </EditForm>
+</div>
 
 @if (_error is not null)
 {
     <div class="alert alert-danger">@_error</div>
 }
 
-<h2 class="mt-4">Today's Trip Board</h2>
+<h2 class="section-heading">Today's Trip Board</h2>
+<RouteDivider />
 
 @if (_board is null)
 {
@@ -47,11 +52,15 @@
 }
 else if (_board.Count == 0)
 {
-    <p>No trips logged today.</p>
+    <ReportEmptyState Message="No trips logged today — log the first arrival when a bus pulls in.">
+        <Glyph>
+            <Icon Name="bus" Size="40" />
+        </Glyph>
+    </ReportEmptyState>
 }
 else
 {
-    <table class="table">
+    <table class="report-table">
         <thead>
             <tr>
                 <th>Company</th>

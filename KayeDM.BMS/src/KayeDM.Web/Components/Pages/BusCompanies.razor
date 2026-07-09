@@ -7,9 +7,11 @@
 
 <PageTitle>Bus Companies — Kaye & DM BMS</PageTitle>
 
-<PageHeader Title="Bus Companies" />
-
-<button class="btn btn-primary mb-3" @onclick="StartCreate">+ Add Company</button>
+<PageHeader Title="Bus Companies">
+    <ActionContent>
+        <button class="btn btn-primary" @onclick="StartCreate">+ Add Company</button>
+    </ActionContent>
+</PageHeader>
 
 @if (_companies is null)
 {
@@ -17,16 +19,20 @@
 }
 else if (_companies.Count == 0)
 {
-    <p>No bus companies yet.</p>
+    <ReportEmptyState Message="No bus companies yet — add the first one to start logging arrivals.">
+        <Glyph>
+            <Icon Name="building" Size="40" />
+        </Glyph>
+    </ReportEmptyState>
 }
 else
 {
-    <table class="table">
+    <table class="report-table">
         <thead>
             <tr>
                 <th>Name</th>
                 <th>Contact Person</th>
-                <th>Meal Allowance / Trip</th>
+                <th class="report-table__money-head">Meal Allowance / Trip</th>
                 <th>Status</th>
                 <th></th>
             </tr>
@@ -37,8 +43,12 @@ else
                 <tr>
                     <td>@company.Name</td>
                     <td>@company.ContactPerson</td>
-                    <td>@company.CrewMealAllowancePerTrip</td>
-                    <td>@(company.IsActive ? "Active" : "Inactive")</td>
+                    <td class="report-table__money">@company.CrewMealAllowancePerTrip</td>
+                    <td>
+                        <span class="badge-status @(company.IsActive ? "badge-status--active" : "badge-status--inactive")">
+                            @(company.IsActive ? "Active" : "Inactive")
+                        </span>
+                    </td>
                     <td>
                         <button class="btn btn-sm btn-secondary" @onclick="() => StartEdit(company)">Edit</button>
                         <button class="btn btn-sm btn-outline-danger" @onclick="() => ToggleActiveAsync(company)">
@@ -53,24 +63,28 @@ else
 
 @if (_editing)
 {
-    <EditForm Model="_form" OnValidSubmit="SaveAsync">
-        <DataAnnotationsValidator />
-        <ValidationSummary />
-        <div class="mb-2">
-            <label>Name</label>
-            <InputText class="form-control" @bind-Value="_form.Name" />
-        </div>
-        <div class="mb-2">
-            <label>Contact Person</label>
-            <InputText class="form-control" @bind-Value="_form.ContactPerson" />
-        </div>
-        <div class="mb-2">
-            <label>Crew Meal Allowance per Trip</label>
-            <InputNumber class="form-control" @bind-Value="_form.CrewMealAllowancePerTrip" />
-        </div>
-        <button type="submit" class="btn btn-success">Save</button>
-        <button type="button" class="btn btn-link" @onclick="CancelEdit">Cancel</button>
-    </EditForm>
+    <div class="entry-form-card">
+        <EditForm Model="_form" OnValidSubmit="SaveAsync">
+            <DataAnnotationsValidator />
+            <ValidationSummary />
+            <div class="entry-form-card__row">
+                <div class="field">
+                    <label>Name</label>
+                    <InputText @bind-Value="_form.Name" />
+                </div>
+                <div class="field">
+                    <label>Contact Person</label>
+                    <InputText @bind-Value="_form.ContactPerson" />
+                </div>
+                <div class="field">
+                    <label>Crew Meal Allowance per Trip</label>
+                    <InputNumber @bind-Value="_form.CrewMealAllowancePerTrip" />
+                </div>
+                <button type="submit" class="btn btn-success">Save</button>
+                <button type="button" class="btn btn-link" @onclick="CancelEdit">Cancel</button>
+            </div>
+        </EditForm>
+    </div>
 }
 
 @code {

@@ -1,0 +1,35 @@
+services:
+  db:
+    image: mcr.microsoft.com/mssql/server:2022-latest
+    environment:
+      ACCEPT_EULA: "Y"
+      MSSQL_SA_PASSWORD: "KayeDM#2026Sql"
+    ports:
+      - "1433:1433"
+    volumes:
+      - kayedm-sql-data:/var/opt/mssql
+    healthcheck:
+      test: ["CMD-SHELL", "/opt/mssql-tools18/bin/sqlcmd -C -S localhost -U sa -P \"$$MSSQL_SA_PASSWORD\" -Q 'SELECT 1' || exit 1"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+      start_period: 20s
+
+  web:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    depends_on:
+      db:
+        condition: service_healthy
+    environment:
+      ASPNETCORE_ENVIRONMENT: Production
+      ConnectionStrings__KayeDmBms: "Server=db;Database=KayeDmBms;User Id=sa;Password=KayeDM#2026Sql;TrustServerCertificate=True;MultipleActiveResultSets=true"
+      # First-run only: seeds the 30-day demo dataset once the database is
+      # empty, then never wipes it again on subsequent `docker compose up`.
+      SEED_ON_START: "true"
+    ports:
+      - "8080:8080"
+
+volumes:
+  kayedm-sql-data:

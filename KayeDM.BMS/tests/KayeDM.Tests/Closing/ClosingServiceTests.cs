@@ -122,4 +122,43 @@ public class ClosingServiceTests : IDisposable
         yesterdayClosed.Should().BeTrue();
         tomorrowClosed.Should().BeFalse();
     }
+
+    [Fact]
+    public async Task GetHistoryAsync_ReturnsEmptyList_WhenNoDaysClosed()
+    {
+        var history = await _sut.GetHistoryAsync();
+
+        history.Should().BeEmpty();
+    }
+
+    [Fact]
+    public async Task GetHistoryAsync_ReturnsClosings_OrderedByDateDescending()
+    {
+        _db.DailyClosings.Add(new DailyClosing
+        {
+            Date = _today.AddDays(-2),
+            TotalSales = 500m,
+            TotalExpenses = 100m,
+            NetForDay = 400m,
+            ClosedById = "owner-1",
+            ClosedAt = _today.AddDays(-2).AddHours(20)
+        });
+        _db.DailyClosings.Add(new DailyClosing
+        {
+            Date = _today.AddDays(-1),
+            TotalSales = 600m,
+            TotalExpenses = 150m,
+            NetForDay = 450m,
+            ClosedById = "owner-1",
+            ClosedAt = _today.AddDays(-1).AddHours(20)
+        });
+        _db.SaveChanges();
+
+        var history = await _sut.GetHistoryAsync();
+
+        history.Should().HaveCount(2);
+        history[0].Date.Should().Be(DateOnly.FromDateTime(_today.AddDays(-1)));
+        history[1].Date.Should().Be(DateOnly.FromDateTime(_today.AddDays(-2)));
+        history[0].NetForDay.Should().Be(450m);
+    }
 }

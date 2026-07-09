@@ -1,0 +1,119 @@
+@page "/closing/history"
+@attribute [Authorize(Roles = "Owner")]
+@using Microsoft.AspNetCore.Authorization
+@using KayeDM.Application.Closing
+@inject IClosingService ClosingService
+
+<PageTitle>Daily Closing History — Kaye & DM BMS</PageTitle>
+
+<div class="report-page">
+    <PageHeader Title="Daily Closing History" />
+
+    @if (_history is null)
+    {
+        <p class="closing-history-loading">Loading…</p>
+    }
+    else if (_history.Count == 0)
+    {
+        <ReportEmptyState Message="No days have been closed yet — close today from Daily Closing once the shift wraps up."
+                          ActionText="Go to Daily Closing" ActionHref="closing">
+            <Glyph>
+                <Icon Name="reports-closing-history" Size="40" />
+            </Glyph>
+        </ReportEmptyState>
+    }
+    else
+    {
+        <div class="report-summary">
+            <KpiCard Label="Days Closed" NumericValue="_history.Count" Decimals="0" Animate="true" />
+            <KpiCard Label="Total Net" NumericValue="_history.Sum(h => h.NetForDay)" Prefix="₱" Decimals="2" Highlight="true" Animate="true" />
+            <KpiCard Label="Best Day" DisplayText="@BestDay?.Date.ToString("MMM d, yyyy")" SubText="@(BestDay is not null ? FormatPeso(BestDay.NetForDay) : null)" />
+            <KpiCard Label="Worst Day" DisplayText="@WorstDay?.Date.ToString("MMM d, yyyy")" SubText="@(WorstDay is not null ? FormatPeso(WorstDay.NetForDay) : null)" />
+        </div>
+
+        <ReportTableFrame>
+            <table class="report-table">
+                <thead>
+                    <tr>
+                        <th>Date</th>
+                        <th class="report-table__money-head">Sales</th>
+                        <th class="report-table__money-head">Expenses</th>
+                        <th class="report-table__money-head">Net</th>
+                        <th>Closed By</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach (var row in _history)
+                    {
+                        <tr class="closing-history-row" tabindex="0" role="button"
+                            aria-expanded="@(_expandedId == row.Id ? "true" : "false")"
+                            aria-controls="@($"closing-detail-{row.Id}")"
+                            @onclick="() => ToggleRow(row.Id)"
+                            @onkeydown="@(e => OnRowKeyDown(e, row.Id))">
+                            <td>@row.Date.ToString("MMM d, yyyy")</td>
+                            <td class="report-table__money">@FormatPeso(row.TotalSales)</td>
+                            <td class="report-table__money">@FormatPeso(row.TotalExpenses)</td>
+                            <td class="report-table__money @(row.NetForDay >= 0 ? "closing-history-row__money--positive" : "closing-history-row__money--negative")">@FormatPeso(row.NetForDay)</td>
+                            <td>@row.ClosedById</td>
+                        </tr>
+                        @if (_expandedId == row.Id)
+                        {
+                            <tr class="closing-history-detail" id="@($"closing-detail-{row.Id}")">
+                                <td colspan="5">
+                                    <div class="closing-history-detail__grid">
+                                        <div class="closing-history-detail__cell">
+                                            <span class="closing-history-detail__label">Cash Sales</span>
+                                            <strong class="closing-history-detail__value">@FormatPeso(row.CashSales)</strong>
+                                        </div>
+                                        <div class="closing-history-detail__cell">
+                                            <span class="closing-history-detail__label">GCash Sales</span>
+                                            <strong class="closing-history-detail__value">@FormatPeso(row.GCashSales)</strong>
+                                        </div>
+                                        <div class="closing-history-detail__cell">
+                                            <span class="closing-history-detail__label">Order Count</span>
+                                            <strong class="closing-history-detail__value">@row.OrderCount</strong>
+                                        </div>
+                                        <div class="closing-history-detail__cell">
+                                            <span class="closing-history-detail__label">Voided Count</span>
+                                            <strong class="closing-history-detail__value">@row.VoidedCount</strong>
+                                        </div>
+                                        <div class="closing-history-detail__cell">
+                                            <span class="closing-history-detail__label">Crew Meals Given</span>
+                                            <strong class="closing-history-detail__value">@row.CrewMealsGiven</strong>
+                                        </div>
+                                        <div class="closing-history-detail__cell">
+                                            <span class="closing-history-detail__label">Closed At</span>
+                                            <strong class="closing-history-detail__value">@row.ClosedAt.ToString("MMM d, yyyy h:mm tt")</strong>
+                                        </div>
+                                    </div>
+                                </td>
+                            </tr>
+                        }
+                    }
+                </tbody>
+            </table>
+        </ReportTableFrame>
+    }
+</div>
+
+@code {
+    private List<DailyClosingDto>? _history;
+    private int? _expandedId;
+
+    protected override async Task OnInitializedAsync() => _history = await ClosingService.GetHistoryAsync();
+
+    private DailyClosingDto? BestDay => _history?.OrderByDescending(h => h.NetForDay).FirstOrDefault();
+    private DailyClosingDto? WorstDay => _history?.OrderBy(h => h.NetForDay).FirstOrDefault();
+
+    private void ToggleRow(int id) => _expandedId = _expandedId == id ? null : id;
+
+    private void OnRowKeyDown(KeyboardEventArgs e, int id)
+    {
+        if (e.Key is "Enter")
+        {
+            ToggleRow(id);
+        }
+    }
+
+    private static string FormatPeso(decimal amount) => string.Format("₱{0:N2}", amount);
+}

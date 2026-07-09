@@ -1,0 +1,45 @@
+@page "/reports"
+@attribute [Authorize(Roles = "Owner")]
+@using Microsoft.AspNetCore.Authorization
+
+<PageTitle>Reports — Kaye & DM BMS</PageTitle>
+
+<PageHeader Title="Reports" />
+
+<div class="report-grid">
+    <a class="report-card" href="buses/report">
+        <span class="report-card__glyph" aria-hidden="true">
+            <Icon Name="reports-crew-meals" Size="28" />
+        </span>
+        <h2 class="report-card__title">Crew Meals</h2>
+        <RouteDivider />
+        <p class="report-card__desc">Monthly crew meals owed per bus company.</p>
+    </a>
+
+    <a class="report-card" href="inventory/variance">
+        <span class="report-card__glyph" aria-hidden="true">
+            <Icon Name="reports-variance" Size="28" />
+        </span>
+        <h2 class="report-card__title">Variance</h2>
+        <RouteDivider />
+        <p class="report-card__desc">Produced, sold, and wasted trays by dish and date range.</p>
+    </a>
+
+    <a class="report-card" href="expenses/report">
+        <span class="report-card__glyph" aria-hidden="true">
+            <Icon Name="reports-expenses" Size="28" />
+        </span>
+        <h2 class="report-card__title">Expenses</h2>
+        <RouteDivider />
+        <p class="report-card__desc">Monthly expense totals by category.</p>
+    </a>
+
+    <a class="report-card" href="closing/history">
+        <span class="report-card__glyph" aria-hidden="true">
+            <Icon Name="reports-closing-history" Size="28" />
+        </span>
+        <h2 class="report-card__title">Daily Closings</h2>
+        <RouteDivider />
+        <p class="report-card__desc">Every closed day's sales, expenses, and net — read-only history.</p>
+    </a>
+</div>

@@ -2,77 +2,108 @@
 @attribute [Authorize(Roles = "Owner")]
 @using Microsoft.AspNetCore.Authorization
 @using KayeDM.Application.Dashboard
+@using ApexCharts
 @inject IDashboardService DashboardService
 
 <PageTitle>Dashboard — Kaye & DM BMS</PageTitle>
 
 <PageHeader Title="Analytics Dashboard" />
 
-<div class="mb-3">
-    <label>From</label>
-    <input type="date" class="form-control" @bind="_from" @bind:after="LoadAsync" />
-    <label>To</label>
-    <input type="date" class="form-control" @bind="_to" @bind:after="LoadAsync" />
+<div class="dashboard-filters">
+    <div class="field">
+        <label for="dashboard-from">From</label>
+        <input id="dashboard-from" type="date" @bind="_from" @bind:after="LoadAsync" />
+    </div>
+    <div class="field">
+        <label for="dashboard-to">To</label>
+        <input id="dashboard-to" type="date" @bind="_to" @bind:after="LoadAsync" />
+    </div>
 </div>
 
-@if (_kpis is not null)
+@if (_kpis is null)
 {
-    <div class="dashboard-kpi-row">
-        <div>Sales: @FormatPeso(_kpis.TotalSales)</div>
-        <div>Expenses: @FormatPeso(_kpis.TotalExpenses)</div>
-        <div>Net Profit: @FormatPeso(_kpis.NetProfit)</div>
-        <div>Orders: @_kpis.OrderCount</div>
-        <div>Avg Ticket: @FormatPeso(_kpis.AverageTicket)</div>
-        <div>Crew Meals: @_kpis.CrewMealsGiven (est. @FormatPeso(_kpis.CrewMealsEstimatedCost))</div>
+    <div class="dashboard-skeleton" aria-hidden="true">
+        <div class="dashboard-skeleton__row">
+            <span class="dashboard-skeleton__block"></span>
+            <span class="dashboard-skeleton__block"></span>
+            <span class="dashboard-skeleton__block"></span>
+        </div>
+        <span class="dashboard-skeleton__block dashboard-skeleton__block--tall"></span>
+    </div>
+}
+else
+{
+    <div class="report-summary">
+        <KpiCard Label="Sales" NumericValue="_kpis.TotalSales" Prefix="₱" Decimals="2" Animate="true" />
+        <KpiCard Label="Expenses" NumericValue="_kpis.TotalExpenses" Prefix="₱" Decimals="2" Animate="true" />
+        <KpiCard Label="Net Profit" NumericValue="_kpis.NetProfit" Prefix="₱" Decimals="2" Animate="true" Highlight="true" />
+        <KpiCard Label="Orders" NumericValue="_kpis.OrderCount" Decimals="0" Animate="true" />
+        <KpiCard Label="Avg Ticket" NumericValue="_kpis.AverageTicket" Prefix="₱" Decimals="2" Animate="true" />
+        <KpiCard Label="Crew Meals" NumericValue="_kpis.CrewMealsGiven" Decimals="0" SubText="@($"est. {FormatPeso(_kpis.CrewMealsEstimatedCost)}")" Animate="true" />
     </div>
 }
 
 @if (_salesByHour is not null)
 {
-    <h2>Sales by Hour — @_salesByHour.Date.ToString("MMM d, yyyy")</h2>
-    <p class="text-muted">Bus arrival markers: @string.Join(", ", _salesByHour.Arrivals.Select(a => $"{a.CompanyName} {a.ArrivedAt:h:mm tt}"))</p>
-    <ApexChart TItem="HourlySalesPoint" Title="Sales by Hour">
-        <ApexPointSeries TItem="HourlySalesPoint" Items="_salesByHour.Hours" Name="Sales" SeriesType="SeriesType.Bar"
-            XValue="@(h => h.Hour.ToString())" YValue="@(h => (decimal?)h.Sales)" />
-    </ApexChart>
+    <div class="dashboard-section">
+        <h2 class="dashboard-section__title">Sales by Hour — @_salesByHour.Date.ToString("MMM d, yyyy")</h2>
+        <RouteDivider />
+        <p class="dashboard-section__hint">Bus arrival markers: @string.Join(", ", _salesByHour.Arrivals.Select(a => $"{a.CompanyName} {a.ArrivedAt:h:mm tt}"))</p>
+        <ApexChart TItem="HourlySalesPoint" Title="Sales by Hour" Options="_salesByHourOptions">
+            <ApexPointSeries TItem="HourlySalesPoint" Items="_salesByHour.Hours" Name="Sales" SeriesType="SeriesType.Bar"
+                XValue="@(h => h.Hour.ToString())" YValue="@(h => (decimal?)h.Sales)" />
+        </ApexChart>
+    </div>
 }
 
 @if (_trend is not null)
 {
-    <h2>Revenue vs. Expenses vs. Net (30-day trend)</h2>
-    <ApexChart TItem="DailyTrendPoint" Title="Revenue vs Expenses vs Net">
-        <ApexPointSeries TItem="DailyTrendPoint" Items="_trend" Name="Revenue" SeriesType="SeriesType.Line"
-            XValue="@(t => t.Date.ToString("MMM d"))" YValue="@(t => (decimal?)t.Revenue)" />
-        <ApexPointSeries TItem="DailyTrendPoint" Items="_trend" Name="Expenses" SeriesType="SeriesType.Line"
-            XValue="@(t => t.Date.ToString("MMM d"))" YValue="@(t => (decimal?)t.Expenses)" />
-        <ApexPointSeries TItem="DailyTrendPoint" Items="_trend" Name="Net" SeriesType="SeriesType.Line"
-            XValue="@(t => t.Date.ToString("MMM d"))" YValue="@(t => (decimal?)t.Net)" />
-    </ApexChart>
+    <div class="dashboard-section">
+        <h2 class="dashboard-section__title">Revenue vs. Expenses vs. Net (30-day trend)</h2>
+        <RouteDivider />
+        <ApexChart TItem="DailyTrendPoint" Title="Revenue vs Expenses vs Net" Options="_trendOptions">
+            <ApexPointSeries TItem="DailyTrendPoint" Items="_trend" Name="Revenue" SeriesType="SeriesType.Line"
+                XValue="@(t => t.Date.ToString("MMM d"))" YValue="@(t => (decimal?)t.Revenue)" />
+            <ApexPointSeries TItem="DailyTrendPoint" Items="_trend" Name="Expenses" SeriesType="SeriesType.Line"
+                XValue="@(t => t.Date.ToString("MMM d"))" YValue="@(t => (decimal?)t.Expenses)" />
+            <ApexPointSeries TItem="DailyTrendPoint" Items="_trend" Name="Net" SeriesType="SeriesType.Line"
+                XValue="@(t => t.Date.ToString("MMM d"))" YValue="@(t => (decimal?)t.Net)" />
+        </ApexChart>
+    </div>
 }
 
 @if (_insights is { Count: > 0 })
 {
-    <h2>Insights</h2>
-    <ul>
-        @foreach (var insight in _insights)
-        {
-            <li><strong>@insight.Title</strong> — @insight.Detail</li>
-        }
-    </ul>
+    <div class="dashboard-section">
+        <h2 class="dashboard-section__title">Insights</h2>
+        <RouteDivider />
+        <ul class="dashboard-insights">
+            @foreach (var insight in _insights)
+            {
+                <li class="dashboard-insights__item">
+                    <strong>@insight.Title</strong>
+                    <span>@insight.Detail</span>
+                </li>
+            }
+        </ul>
+    </div>
 }
 
 @if (_expenseBreakdown is not null)
 {
-    <h2>Expense Breakdown — @_breakdownMonth.ToString("MMMM yyyy")</h2>
-    <ApexChart TItem="ExpenseCategoryBreakdownRow" Title="Expense Breakdown">
-        <ApexPointSeries TItem="ExpenseCategoryBreakdownRow" Items="_expenseBreakdown" Name="Amount" SeriesType="SeriesType.Bar"
-            XValue="@(r => r.CategoryName)" YValue="@(r => (decimal?)r.Amount)" />
-    </ApexChart>
+    <div class="dashboard-section">
+        <h2 class="dashboard-section__title">Expense Breakdown — @_breakdownMonth.ToString("MMMM yyyy")</h2>
+        <RouteDivider />
+        <ApexChart TItem="ExpenseCategoryBreakdownRow" Title="Expense Breakdown" Options="_breakdownOptions">
+            <ApexPointSeries TItem="ExpenseCategoryBreakdownRow" Items="_expenseBreakdown" Name="Amount" SeriesType="SeriesType.Bar"
+                XValue="@(r => r.CategoryName)" YValue="@(r => (decimal?)r.Amount)" />
+        </ApexChart>
+    </div>
 }
 
-<div class="mb-2">
-    <label>Top dishes window</label>
-    <select class="form-control" @bind="_topDishesDays" @bind:after="LoadTopDishesAndWasteAsync">
+<div class="field dashboard-window-picker">
+    <label for="dashboard-window">Top dishes window</label>
+    <select id="dashboard-window" @bind="_topDishesDays" @bind:after="LoadTopDishesAndWasteAsync">
         <option value="7">Last 7 days</option>
         <option value="30">Last 30 days</option>
     </select>
@@ -80,50 +111,66 @@
 
 @if (_topDishes is not null)
 {
-    <h2>Top Dishes by Revenue</h2>
-    <ApexChart TItem="TopDishRow" Title="Top Dishes">
-        <ApexPointSeries TItem="TopDishRow" Items="_topDishes" Name="Revenue" SeriesType="SeriesType.Bar"
-            XValue="@(r => r.MenuItemName)" YValue="@(r => (decimal?)r.Revenue)" />
-    </ApexChart>
+    <div class="dashboard-section">
+        <h2 class="dashboard-section__title">Top Dishes by Revenue</h2>
+        <RouteDivider />
+        <ApexChart TItem="TopDishRow" Title="Top Dishes" Options="_topDishesOptions">
+            <ApexPointSeries TItem="TopDishRow" Items="_topDishes" Name="Revenue" SeriesType="SeriesType.Bar"
+                XValue="@(r => r.MenuItemName)" YValue="@(r => (decimal?)r.Revenue)" />
+        </ApexChart>
+    </div>
 }
 
 @if (_wasteByDish is not null)
 {
-    <h2>Waste % by Dish</h2>
-    <ApexChart TItem="WasteByDishRow" Title="Waste % by Dish">
-        <ApexPointSeries TItem="WasteByDishRow" Items="_wasteByDish" Name="Waste %" SeriesType="SeriesType.Bar"
-            XValue="@(r => r.MenuItemName)" YValue="@(r => (decimal?)r.WastePercent)" />
-    </ApexChart>
+    <div class="dashboard-section">
+        <h2 class="dashboard-section__title">Waste % by Dish</h2>
+        <RouteDivider />
+        <ApexChart TItem="WasteByDishRow" Title="Waste % by Dish" Options="_wasteOptions">
+            <ApexPointSeries TItem="WasteByDishRow" Items="_wasteByDish" Name="Waste %" SeriesType="SeriesType.Bar"
+                XValue="@(r => r.MenuItemName)" YValue="@(r => (decimal?)r.WastePercent)" />
+        </ApexChart>
+    </div>
 }
 
 @if (_busSales is not null)
 {
-    <h2>Sales per Bus Company</h2>
-    <p class="text-muted">"Wave-attributed" sales are a heuristic: unassigned orders completed within ±20 minutes of that company's arrivals — not a confirmed assignment.</p>
-    <table class="table">
-        <thead>
-            <tr><th>Company</th><th>Direct Sales</th><th>Wave-Attributed Sales</th></tr>
-        </thead>
-        <tbody>
-            @foreach (var row in _busSales)
-            {
+    <div class="dashboard-section">
+        <h2 class="dashboard-section__title">Sales per Bus Company</h2>
+        <RouteDivider />
+        <p class="dashboard-section__hint">"Wave-attributed" sales are a heuristic: unassigned orders completed within ±20 minutes of that company's arrivals — not a confirmed assignment.</p>
+        <table class="report-table">
+            <thead>
                 <tr>
-                    <td>@row.CompanyName</td>
-                    <td>@FormatPeso(row.DirectSales) (@row.DirectOrderCount orders)</td>
-                    <td>@FormatPeso(row.WaveAttributedSales) (@row.WaveAttributedOrderCount orders)</td>
+                    <th>Company</th>
+                    <th class="report-table__money-head">Direct Sales</th>
+                    <th class="report-table__money-head">Wave-Attributed Sales</th>
                 </tr>
-            }
-        </tbody>
-    </table>
+            </thead>
+            <tbody>
+                @foreach (var row in _busSales)
+                {
+                    <tr>
+                        <td>@row.CompanyName</td>
+                        <td class="report-table__money">@FormatPeso(row.DirectSales) <span class="dashboard-order-count">(@row.DirectOrderCount orders)</span></td>
+                        <td class="report-table__money">@FormatPeso(row.WaveAttributedSales) <span class="dashboard-order-count">(@row.WaveAttributedOrderCount orders)</span></td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    </div>
 }
 
 @if (_paymentSplit is not null)
 {
-    <h2>Payment Method Split</h2>
-    <ApexChart TItem="PaymentMethodSplitRow" Title="Payment Method Split">
-        <ApexPointSeries TItem="PaymentMethodSplitRow" Items="_paymentSplit" Name="Amount" SeriesType="SeriesType.Pie"
-            XValue="@(r => r.PaymentMethod)" YValue="@(r => (decimal?)r.Amount)" />
-    </ApexChart>
+    <div class="dashboard-section">
+        <h2 class="dashboard-section__title">Payment Method Split</h2>
+        <RouteDivider />
+        <ApexChart TItem="PaymentMethodSplitRow" Title="Payment Method Split" Options="_paymentSplitOptions">
+            <ApexPointSeries TItem="PaymentMethodSplitRow" Items="_paymentSplit" Name="Amount" SeriesType="SeriesType.Pie"
+                XValue="@(r => r.PaymentMethod)" YValue="@(r => (decimal?)r.Amount)" />
+        </ApexChart>
+    </div>
 }
 
 @code {
@@ -141,6 +188,13 @@
     private List<WasteByDishRow>? _wasteByDish;
     private List<BusCompanySalesRow>? _busSales;
     private List<PaymentMethodSplitRow>? _paymentSplit;
+
+    private static readonly ApexChartOptions<HourlySalesPoint> _salesByHourOptions = new() { Colors = new List<string> { "#1E40AF" } };
+    private static readonly ApexChartOptions<DailyTrendPoint> _trendOptions = new() { Colors = new List<string> { "#1E40AF", "#EF5B4C", "#2E8B57" } };
+    private static readonly ApexChartOptions<ExpenseCategoryBreakdownRow> _breakdownOptions = new() { Colors = new List<string> { "#EF5B4C" } };
+    private static readonly ApexChartOptions<TopDishRow> _topDishesOptions = new() { Colors = new List<string> { "#1E40AF" } };
+    private static readonly ApexChartOptions<WasteByDishRow> _wasteOptions = new() { Colors = new List<string> { "#EF5B4C" } };
+    private static readonly ApexChartOptions<PaymentMethodSplitRow> _paymentSplitOptions = new() { Colors = new List<string> { "#1E40AF", "#2E8B57" } };
 
     protected override async Task OnInitializedAsync()
     {

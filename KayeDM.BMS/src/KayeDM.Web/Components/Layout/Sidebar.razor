@@ -1,7 +1,7 @@
 @implements IDisposable
 @inject NavigationManager Nav
 
-<aside class="sidebar-shell">
+<aside class="sidebar-shell @(_collapsed ? "sidebar-shell--collapsed" : "")">
     <div class="sidebar-header">
         <a href="/" class="sidebar-brand">
             <img src="img/kaye-dm-logo-3d-64.png" alt="Kaye &amp; DM" width="40" height="40" />
@@ -11,73 +11,129 @@
                 aria-expanded="@_mobileOpen.ToString().ToLowerInvariant()" @onclick="ToggleMobile">
             <span></span><span></span><span></span>
         </button>
+        <button type="button" class="sidebar-collapse-toggle" aria-label="@(_collapsed ? "Expand sidebar" : "Collapse sidebar")"
+                @onclick="ToggleCollapsed">
+            <span class="sidebar-collapse-toggle__chevron @(_collapsed ? "sidebar-collapse-toggle__chevron--flipped" : "")" aria-hidden="true">❮</span>
+        </button>
     </div>
 
     <nav class="sidebar-nav @(_mobileOpen ? "sidebar-nav--open" : "")">
         <AuthorizeView Roles="Owner">
             <div class="nav-item">
-                <NavLink class="nav-link" href="dashboard">Dashboard</NavLink>
+                <NavLink class="nav-link" href="dashboard" Match="NavLinkMatch.All" title="Dashboard">
+                    <Icon Name="dashboard" />
+                    <span class="nav-link__label">Dashboard</span>
+                </NavLink>
             </div>
         </AuthorizeView>
 
         <NavGroup Label="Sales" RoutePrefixes="@(new[] { "pos", "closing" })">
             <div class="nav-item">
-                <NavLink class="nav-link" href="pos">POS</NavLink>
+                <NavLink class="nav-link" href="pos" Match="NavLinkMatch.All" title="POS">
+                    <Icon Name="pos" />
+                    <span class="nav-link__label">POS</span>
+                </NavLink>
             </div>
             <AuthorizeView Roles="Owner">
                 <div class="nav-item">
-                    <NavLink class="nav-link" href="closing">Daily Closing</NavLink>
+                    <NavLink class="nav-link" href="closing" Match="NavLinkMatch.All" title="Daily Closing">
+                        <Icon Name="closing" />
+                        <span class="nav-link__label">Daily Closing</span>
+                    </NavLink>
                 </div>
             </AuthorizeView>
         </NavGroup>
 
-        <NavGroup Label="Buses" RoutePrefixes="@(new[] { "buses" })">
+        <NavGroup Label="Buses" RoutePrefixes="@(new[] { "buses/arrivals", "buses/companies" })">
             <div class="nav-item">
-                <NavLink class="nav-link" href="buses/arrivals">Arrivals</NavLink>
+                <NavLink class="nav-link" href="buses/arrivals" Match="NavLinkMatch.All" title="Arrivals">
+                    <Icon Name="bus" />
+                    <span class="nav-link__label">Arrivals</span>
+                </NavLink>
             </div>
             <AuthorizeView Roles="Owner">
                 <div class="nav-item">
-                    <NavLink class="nav-link" href="buses/companies">Companies</NavLink>
-                </div>
-            </AuthorizeView>
-            <AuthorizeView Roles="Owner">
-                <div class="nav-item">
-                    <NavLink class="nav-link" href="buses/report">Crew Meal Report</NavLink>
+                    <NavLink class="nav-link" href="buses/companies" Match="NavLinkMatch.All" title="Companies">
+                        <Icon Name="building" />
+                        <span class="nav-link__label">Companies</span>
+                    </NavLink>
                 </div>
             </AuthorizeView>
         </NavGroup>
 
-        <NavGroup Label="Inventory" RoutePrefixes="@(new[] { "inventory" })">
+        <NavGroup Label="Inventory" RoutePrefixes="@(new[] { "inventory/production", "inventory/waste" })">
             <div class="nav-item">
-                <NavLink class="nav-link" href="inventory/production">Production</NavLink>
+                <NavLink class="nav-link" href="inventory/production" Match="NavLinkMatch.All" title="Production">
+                    <Icon Name="trays" />
+                    <span class="nav-link__label">Production</span>
+                </NavLink>
             </div>
             <div class="nav-item">
-                <NavLink class="nav-link" href="inventory/waste">Waste</NavLink>
+                <NavLink class="nav-link" href="inventory/waste" Match="NavLinkMatch.All" title="Waste">
+                    <Icon Name="waste" />
+                    <span class="nav-link__label">Waste</span>
+                </NavLink>
             </div>
-            <AuthorizeView Roles="Owner">
-                <div class="nav-item">
-                    <NavLink class="nav-link" href="inventory/variance">Variance</NavLink>
-                </div>
-            </AuthorizeView>
         </NavGroup>
 
         <AuthorizeView Roles="Owner">
-            <NavGroup Label="Expenses" RoutePrefixes="@(new[] { "expenses" })">
+            <NavGroup Label="Expenses" RoutePrefixes="@(new[] { "expenses", "expenses/categories" })">
                 <div class="nav-item">
-                    <NavLink class="nav-link" href="expenses">Entry</NavLink>
+                    <NavLink class="nav-link" href="expenses" Match="NavLinkMatch.All" title="Entry">
+                        <Icon Name="wallet" />
+                        <span class="nav-link__label">Entry</span>
+                    </NavLink>
                 </div>
                 <div class="nav-item">
-                    <NavLink class="nav-link" href="expenses/categories">Categories</NavLink>
+                    <NavLink class="nav-link" href="expenses/categories" Match="NavLinkMatch.All" title="Categories">
+                        <Icon Name="tag" />
+                        <span class="nav-link__label">Categories</span>
+                    </NavLink>
+                </div>
+            </NavGroup>
+        </AuthorizeView>
+
+        <AuthorizeView Roles="Owner">
+            <NavGroup Label="Reports" RoutePrefixes="@(new[] { "reports", "buses/report", "inventory/variance", "expenses/report", "closing/history" })">
+                <div class="nav-item">
+                    <NavLink class="nav-link" href="reports" Match="NavLinkMatch.All" title="Overview">
+                        <Icon Name="reports-overview" />
+                        <span class="nav-link__label">Overview</span>
+                    </NavLink>
                 </div>
                 <div class="nav-item">
-                    <NavLink class="nav-link" href="expenses/report">Report</NavLink>
+                    <NavLink class="nav-link" href="buses/report" Match="NavLinkMatch.All" title="Crew Meals">
+                        <Icon Name="reports-crew-meals" />
+                        <span class="nav-link__label">Crew Meals</span>
+                    </NavLink>
+                </div>
+                <div class="nav-item">
+                    <NavLink class="nav-link" href="inventory/variance" Match="NavLinkMatch.All" title="Variance">
+                        <Icon Name="reports-variance" />
+                        <span class="nav-link__label">Variance</span>
+                    </NavLink>
+                </div>
+                <div class="nav-item">
+                    <NavLink class="nav-link" href="expenses/report" Match="NavLinkMatch.All" title="Expenses">
+                        <Icon Name="reports-expenses" />
+                        <span class="nav-link__label">Expenses</span>
+                    </NavLink>
+                </div>
+                <div class="nav-item">
+                    <NavLink class="nav-link" href="closing/history" Match="NavLinkMatch.All" title="Daily Closings">
+                        <Icon Name="reports-closing-history" />
+                        <span class="nav-link__label">Daily Closings</span>
+                    </NavLink>
                 </div>
             </NavGroup>
         </AuthorizeView>
 
         <AuthorizeView Roles="Owner">
             <div class="nav-item">
-                <NavLink class="nav-link" href="menu">Menu</NavLink>
+                <NavLink class="nav-link" href="menu" Match="NavLinkMatch.All" title="Menu">
+                    <Icon Name="menu" />
+                    <span class="nav-link__label">Menu</span>
+                </NavLink>
             </div>
         </AuthorizeView>
     </nav>
@@ -93,7 +149,10 @@
                 </div>
                 <form method="post" action="account/logout">
                     <AntiforgeryToken />
-                    <button type="submit" class="sidebar-logout">Log Out</button>
+                    <button type="submit" class="sidebar-logout" title="Log Out">
+                        <Icon Name="logout" />
+                        <span class="nav-link__label">Log Out</span>
+                    </button>
                 </form>
             </Authorized>
         </AuthorizeView>
@@ -102,6 +161,7 @@
 
 @code {
     private bool _mobileOpen;
+    private bool _collapsed;
 
     protected override void OnInitialized() => Nav.LocationChanged += OnLocationChanged;
 
@@ -112,6 +172,8 @@
     }
 
     private void ToggleMobile() => _mobileOpen = !_mobileOpen;
+
+    private void ToggleCollapsed() => _collapsed = !_collapsed;
 
     public void Dispose() => Nav.LocationChanged -= OnLocationChanged;
 }
