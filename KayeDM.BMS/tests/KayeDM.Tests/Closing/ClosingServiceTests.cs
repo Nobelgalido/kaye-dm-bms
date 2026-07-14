@@ -110,6 +110,23 @@ public class ClosingServiceTests : IDisposable
     }
 
     [Fact]
+    public async Task CreateClosingAsync_ThrowsDomainException_NotDbUpdateException_WhenClosingWasCreatedConcurrently()
+    {
+        // Simulates a second request that committed a closing for today
+        // strictly between this caller's read and its own save — the unique
+        // index on DailyClosing.Date is the sole guard, so this must surface
+        // as the same friendly DomainException as the sequential case, not
+        // a raw DbUpdateException bubbling out of SaveChangesAsync.
+        _db.DailyClosings.Add(new DailyClosing { Date = _today, TotalSales = 50m, ClosedById = "owner-2", ClosedAt = DateTime.Now });
+        _db.SaveChanges();
+
+        var act = async () => await _sut.CreateClosingAsync("owner-1");
+
+        var exception = await act.Should().ThrowAsync<KayeDM.Domain.Exceptions.DomainException>();
+        exception.Which.Should().NotBeOfType<Microsoft.EntityFrameworkCore.DbUpdateException>();
+    }
+
+    [Fact]
     public async Task IsDateClosedAsync_ReturnsTrue_ForDatesOnOrBeforeAClosing()
     {
         await _sut.CreateClosingAsync("owner-1");

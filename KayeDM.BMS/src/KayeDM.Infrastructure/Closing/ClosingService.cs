@@ -67,13 +67,6 @@ public class ClosingService : IClosingService
         await using var db = await _dbContextFactory.CreateDbContextAsync();
 
         var today = DateTime.Now.Date;
-
-        var alreadyClosed = await db.DailyClosings.AnyAsync(c => c.Date == today);
-        if (alreadyClosed)
-        {
-            throw new DomainException($"{today:MMM d, yyyy} has already been closed.");
-        }
-
         var figures = await GetTodaysFiguresAsync();
 
         var entity = new DailyClosing
@@ -92,7 +85,15 @@ public class ClosingService : IClosingService
         };
 
         db.DailyClosings.Add(entity);
-        await db.SaveChangesAsync();
+
+        try
+        {
+            await db.SaveChangesAsync();
+        }
+        catch (DbUpdateException)
+        {
+            throw new DomainException($"{today:MMM d, yyyy} has already been closed.");
+        }
 
         return new DailyClosingDto(
             entity.Id, DateOnly.FromDateTime(entity.Date), entity.TotalSales, entity.CashSales, entity.GCashSales,
