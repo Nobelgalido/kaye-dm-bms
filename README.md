@@ -4,7 +4,7 @@ Management system for a provincial bus meal stop in Sorsogon, Philippines.
 
 This is a ground-up rebuild of my VB.NET / .NET Framework / MySQL capstone project from school, redone in ASP.NET Core 8 as a portfolio piece — the same domain, modeled the way I'd actually build it now, with the modernization habits (layered architecture, EF Core migrations kept as history, a real test suite, containerized deployment) that legacy .NET shops are hiring for.
 
-[Live demo] · [45s demo GIF] — coming soon; run it locally with the one-liner below in the meantime.
+**[Live demo](https://kaye-dm-bms.azurewebsites.net)** (free tier — first load can take 30–60s while it wakes up) · [45s demo GIF] — coming soon; run it locally with the one-liner below in the meantime.
 
 ## The domain (why this isn't a POS tutorial)
 
@@ -87,7 +87,7 @@ docker compose up
 
 This builds the app image, starts SQL Server, applies all 10 migrations, and seeds 30 days of demo data (waves, crew meals, trays, expenses) the first time the database is empty. Then open **http://localhost:8080**.
 
-Seeded logins (same password for both):
+Seeded logins (same password for both — also work on the [live demo](https://kaye-dm-bms.azurewebsites.net)):
 
 | Role    | Email                  | Password     |
 |---------|------------------------|--------------|
