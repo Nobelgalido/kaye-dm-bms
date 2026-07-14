@@ -3,6 +3,7 @@
 @using Microsoft.AspNetCore.Authorization
 @using System.ComponentModel.DataAnnotations
 @using KayeDM.Application.Buses
+@using KayeDM.Domain.Exceptions
 @inject IBusService BusService
 
 <PageTitle>Bus Companies — Kaye & DM BMS</PageTitle>
@@ -12,6 +13,11 @@
         <button class="btn btn-primary" @onclick="StartCreate">+ Add Company</button>
     </ActionContent>
 </PageHeader>
+
+@if (_error is not null)
+{
+    <div class="alert alert-danger">@_error</div>
+}
 
 @if (_companies is null)
 {
@@ -92,6 +98,7 @@ else
     private bool _editing;
     private int _editingId;
     private EditModel _form = new();
+    private string? _error;
 
     protected override async Task OnInitializedAsync() => await LoadAsync();
 
@@ -120,24 +127,40 @@ else
 
     private async Task SaveAsync()
     {
-        var dto = new BusCompanyUpsertDto(_form.Name, _form.ContactPerson, _form.CrewMealAllowancePerTrip);
-        if (_editingId > 0)
+        _error = null;
+        try
         {
-            await BusService.UpdateCompanyAsync(_editingId, dto);
-        }
-        else
-        {
-            await BusService.CreateCompanyAsync(dto);
-        }
+            var dto = new BusCompanyUpsertDto(_form.Name, _form.ContactPerson, _form.CrewMealAllowancePerTrip);
+            if (_editingId > 0)
+            {
+                await BusService.UpdateCompanyAsync(_editingId, dto);
+            }
+            else
+            {
+                await BusService.CreateCompanyAsync(dto);
+            }
 
-        _editing = false;
-        await LoadAsync();
+            _editing = false;
+            await LoadAsync();
+        }
+        catch (DomainException ex)
+        {
+            _error = ex.Message;
+        }
     }
 
     private async Task ToggleActiveAsync(BusCompanyDto company)
     {
-        await BusService.SetCompanyActiveAsync(company.Id, !company.IsActive);
-        await LoadAsync();
+        _error = null;
+        try
+        {
+            await BusService.SetCompanyActiveAsync(company.Id, !company.IsActive);
+            await LoadAsync();
+        }
+        catch (DomainException ex)
+        {
+            _error = ex.Message;
+        }
     }
 
     private class EditModel
