@@ -1,11 +1,13 @@
 using FluentAssertions;
 using KayeDM.Application.Expenses;
+using KayeDM.Application.Inventory;
 using KayeDM.Application.Orders;
 using KayeDM.Domain.Entities;
 using KayeDM.Domain.Enums;
 using KayeDM.Domain.Exceptions;
 using KayeDM.Infrastructure.Data;
 using KayeDM.Infrastructure.Expenses;
+using KayeDM.Infrastructure.Inventory;
 using KayeDM.Infrastructure.Orders;
 using Microsoft.Data.Sqlite;
 using Microsoft.EntityFrameworkCore;
@@ -18,6 +20,7 @@ public class ClosingLockTests : IDisposable
     private readonly AppDbContext _db;
     private readonly OrderService _orderService;
     private readonly ExpenseService _expenseService;
+    private readonly InventoryService _inventoryService;
     private readonly DateTime _today = DateTime.Now.Date;
 
     public ClosingLockTests()
@@ -33,6 +36,7 @@ public class ClosingLockTests : IDisposable
         _db.Database.EnsureCreated();
         _orderService = new OrderService(new TestDbContextFactory(options));
         _expenseService = new ExpenseService(new TestDbContextFactory(options));
+        _inventoryService = new InventoryService(new TestDbContextFactory(options));
 
         _db.MenuItems.Add(new MenuItem { Id = 1, Name = "Adobo", Category = MenuCategory.Ulam, Price = 90m, IsActive = true, SortOrder = 1 });
         _db.ExpenseCategories.Add(new ExpenseCategory { Id = 1, Name = "Ingredients", Type = ExpenseCategoryType.Ingredients, IsActive = true });
@@ -141,6 +145,30 @@ public class ClosingLockTests : IDisposable
         _db.SaveChanges();
 
         var act = async () => await _expenseService.DeleteExpenseAsync(expense.Id);
+
+        await act.Should().ThrowAsync<DateClosedException>();
+    }
+
+    [Fact]
+    public async Task CreateBatchAsync_Throws_WhenTodayIsClosed()
+    {
+        var request = new CreateDishBatchRequest(1, 2m, 10);
+
+        var act = async () => await _inventoryService.CreateBatchAsync(request);
+
+        await act.Should().ThrowAsync<DateClosedException>();
+    }
+
+    [Fact]
+    public async Task LogWasteAsync_Throws_WhenBatchDateIsClosed()
+    {
+        var batch = new DishBatch { MenuItemId = 1, Date = _today, TraysProduced = 2m, ServingsPerTray = 10, ProducedAt = DateTime.Now };
+        _db.DishBatches.Add(batch);
+        _db.SaveChanges();
+
+        var request = new LogWasteRequest(batch.Id, 1m, WasteReason.Spoiled, "u1");
+
+        var act = async () => await _inventoryService.LogWasteAsync(request);
 
         await act.Should().ThrowAsync<DateClosedException>();
     }

@@ -1,6 +1,7 @@
 using KayeDM.Application.Inventory;
 using KayeDM.Domain.Entities;
 using KayeDM.Domain.Exceptions;
+using KayeDM.Infrastructure.Closing;
 using KayeDM.Infrastructure.Data;
 using Microsoft.EntityFrameworkCore;
 
@@ -18,6 +19,8 @@ public class InventoryService : IInventoryService
     public async Task<DishBatchDto> CreateBatchAsync(CreateDishBatchRequest request)
     {
         await using var db = await _dbContextFactory.CreateDbContextAsync();
+
+        await ClosingGuard.EnsureDateNotClosedAsync(db, DateTime.Now.Date, "log a dish batch");
 
         var menuItem = await db.MenuItems.FirstOrDefaultAsync(m => m.Id == request.MenuItemId)
             ?? throw new DomainException($"Menu item {request.MenuItemId} not found.");
@@ -67,6 +70,8 @@ public class InventoryService : IInventoryService
 
         var batch = await db.DishBatches.Include(b => b.MenuItem).FirstOrDefaultAsync(b => b.Id == request.DishBatchId)
             ?? throw new DomainException($"Dish batch {request.DishBatchId} not found.");
+
+        await ClosingGuard.EnsureDateNotClosedAsync(db, batch.Date, "log waste");
 
         if (request.TraysWasted <= 0)
         {
