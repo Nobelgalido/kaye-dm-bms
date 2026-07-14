@@ -70,40 +70,37 @@ else
     </table>
 }
 
-@if (_editing)
-{
-    <div class="entry-form-card">
-        <EditForm Model="_form" OnValidSubmit="SaveAsync">
-            <DataAnnotationsValidator />
-            <ValidationSummary />
-            <div class="entry-form-card__row">
-                <div class="field">
-                    <label>Name</label>
-                    <InputText @bind-Value="_form.Name" />
-                </div>
-                <div class="field">
-                    <label>Category</label>
-                    <InputSelect @bind-Value="_form.Category">
-                        @foreach (var category in Enum.GetValues<MenuCategory>())
-                        {
-                            <option value="@category">@category</option>
-                        }
-                    </InputSelect>
-                </div>
-                <div class="field">
-                    <label>Price</label>
-                    <InputNumber @bind-Value="_form.Price" />
-                </div>
-                <div class="field">
-                    <label>Sort Order</label>
-                    <InputNumber @bind-Value="_form.SortOrder" />
-                </div>
-                <button type="submit" class="btn btn-success">Save</button>
-                <button type="button" class="btn btn-link" @onclick="CancelEdit">Cancel</button>
+<Modal Visible="_editing" OnClose="CancelEdit">
+    <EditForm Model="_form" OnValidSubmit="SaveAsync">
+        <DataAnnotationsValidator />
+        <ValidationSummary />
+        <div class="entry-form-card__row">
+            <div class="field">
+                <label>Name</label>
+                <InputText @bind-Value="_form.Name" />
             </div>
-        </EditForm>
-    </div>
-}
+            <div class="field">
+                <label>Category</label>
+                <InputSelect @bind-Value="_form.Category">
+                    @foreach (var category in Enum.GetValues<MenuCategory>())
+                    {
+                        <option value="@category">@category</option>
+                    }
+                </InputSelect>
+            </div>
+            <div class="field">
+                <label>Price</label>
+                <InputNumber @bind-Value="_form.Price" />
+            </div>
+            <div class="field">
+                <label>Sort Order</label>
+                <InputNumber @bind-Value="_form.SortOrder" />
+            </div>
+            <button type="submit" class="btn btn-success">Save</button>
+            <button type="button" class="btn btn-link" @onclick="CancelEdit">Cancel</button>
+        </div>
+    </EditForm>
+</Modal>
 
 @code {
     private List<MenuItemDto>? _items;

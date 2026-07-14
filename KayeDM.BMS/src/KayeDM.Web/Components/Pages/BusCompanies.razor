@@ -67,31 +67,28 @@ else
     </table>
 }
 
-@if (_editing)
-{
-    <div class="entry-form-card">
-        <EditForm Model="_form" OnValidSubmit="SaveAsync">
-            <DataAnnotationsValidator />
-            <ValidationSummary />
-            <div class="entry-form-card__row">
-                <div class="field">
-                    <label>Name</label>
-                    <InputText @bind-Value="_form.Name" />
-                </div>
-                <div class="field">
-                    <label>Contact Person</label>
-                    <InputText @bind-Value="_form.ContactPerson" />
-                </div>
-                <div class="field">
-                    <label>Crew Meal Allowance per Trip</label>
-                    <InputNumber @bind-Value="_form.CrewMealAllowancePerTrip" />
-                </div>
-                <button type="submit" class="btn btn-success">Save</button>
-                <button type="button" class="btn btn-link" @onclick="CancelEdit">Cancel</button>
+<Modal Visible="_editing" OnClose="CancelEdit">
+    <EditForm Model="_form" OnValidSubmit="SaveAsync">
+        <DataAnnotationsValidator />
+        <ValidationSummary />
+        <div class="entry-form-card__row">
+            <div class="field">
+                <label>Name</label>
+                <InputText @bind-Value="_form.Name" />
             </div>
-        </EditForm>
-    </div>
-}
+            <div class="field">
+                <label>Contact Person</label>
+                <InputText @bind-Value="_form.ContactPerson" />
+            </div>
+            <div class="field">
+                <label>Crew Meal Allowance per Trip</label>
+                <InputNumber @bind-Value="_form.CrewMealAllowancePerTrip" />
+            </div>
+            <button type="submit" class="btn btn-success">Save</button>
+            <button type="button" class="btn btn-link" @onclick="CancelEdit">Cancel</button>
+        </div>
+    </EditForm>
+</Modal>
 
 @code {
     private List<BusCompanyDto>? _companies;

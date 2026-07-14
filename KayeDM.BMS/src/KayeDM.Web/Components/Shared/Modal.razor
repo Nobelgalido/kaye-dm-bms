@@ -1,0 +1,37 @@
+@if (Visible)
+{
+    <div class="dialog-overlay" @onclick="CloseAsync">
+        <div class="dialog-panel entry-form-card" @onclick:stopPropagation="true" @onkeydown="HandleKeyDownAsync" tabindex="-1" @ref="_panelRef">
+            @ChildContent
+        </div>
+    </div>
+}
+
+@code {
+    [Parameter]
+    public bool Visible { get; set; }
+
+    [Parameter]
+    public EventCallback OnClose { get; set; }
+
+    [Parameter]
+    public RenderFragment? ChildContent { get; set; }
+
+    private ElementReference _panelRef;
+    private bool _wasVisible;
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (Visible && !_wasVisible)
+        {
+            await _panelRef.FocusAsync();
+        }
+
+        _wasVisible = Visible;
+    }
+
+    private Task CloseAsync() => OnClose.InvokeAsync();
+
+    private Task HandleKeyDownAsync(KeyboardEventArgs e)
+        => e.Key == "Escape" ? OnClose.InvokeAsync() : Task.CompletedTask;
+}

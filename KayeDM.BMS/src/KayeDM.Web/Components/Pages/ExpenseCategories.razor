@@ -66,9 +66,7 @@ else
     </table>
 }
 
-@if (_editing)
-{
-    <div class="entry-form-card">
+<Modal Visible="_editing" OnClose="CancelEdit">
     <EditForm Model="_form" OnValidSubmit="SaveAsync">
         <DataAnnotationsValidator />
         <ValidationSummary />
@@ -90,8 +88,7 @@ else
             <button type="button" class="btn btn-link" @onclick="CancelEdit">Cancel</button>
         </div>
     </EditForm>
-    </div>
-}
+</Modal>
 
 @code {
     private List<ExpenseCategoryDto>? _categories;
