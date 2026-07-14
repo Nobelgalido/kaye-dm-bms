@@ -4,6 +4,7 @@
 @using System.ComponentModel.DataAnnotations
 @using KayeDM.Application.Expenses
 @using KayeDM.Domain.Enums
+@using KayeDM.Domain.Exceptions
 @inject IExpenseService ExpenseService
 
 <PageTitle>Expense Categories — Kaye & DM BMS</PageTitle>
@@ -13,6 +14,11 @@
         <button class="btn btn-primary" @onclick="StartCreate">+ Add Category</button>
     </ActionContent>
 </PageHeader>
+
+@if (_error is not null)
+{
+    <div class="alert alert-danger">@_error</div>
+}
 
 @if (_categories is null)
 {
@@ -92,6 +98,7 @@ else
     private bool _editing;
     private int _editingId;
     private CategoryForm _form = new();
+    private string? _error;
 
     protected override async Task OnInitializedAsync() => await LoadAsync();
 
@@ -115,24 +122,40 @@ else
 
     private async Task SaveAsync()
     {
-        var dto = new ExpenseCategoryUpsertDto(_form.Name, _form.Type);
-        if (_editingId > 0)
+        _error = null;
+        try
         {
-            await ExpenseService.UpdateCategoryAsync(_editingId, dto);
-        }
-        else
-        {
-            await ExpenseService.CreateCategoryAsync(dto);
-        }
+            var dto = new ExpenseCategoryUpsertDto(_form.Name, _form.Type);
+            if (_editingId > 0)
+            {
+                await ExpenseService.UpdateCategoryAsync(_editingId, dto);
+            }
+            else
+            {
+                await ExpenseService.CreateCategoryAsync(dto);
+            }
 
-        _editing = false;
-        await LoadAsync();
+            _editing = false;
+            await LoadAsync();
+        }
+        catch (DomainException ex)
+        {
+            _error = ex.Message;
+        }
     }
 
     private async Task ToggleActiveAsync(ExpenseCategoryDto category)
     {
-        await ExpenseService.SetCategoryActiveAsync(category.Id, !category.IsActive);
-        await LoadAsync();
+        _error = null;
+        try
+        {
+            await ExpenseService.SetCategoryActiveAsync(category.Id, !category.IsActive);
+            await LoadAsync();
+        }
+        catch (DomainException ex)
+        {
+            _error = ex.Message;
+        }
     }
 
     private class CategoryForm
