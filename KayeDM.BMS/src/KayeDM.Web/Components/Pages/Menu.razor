@@ -4,6 +4,7 @@
 @using System.ComponentModel.DataAnnotations
 @using KayeDM.Application.Menu
 @using KayeDM.Domain.Enums
+@using KayeDM.Domain.Exceptions
 @inject IMenuItemService MenuItemService
 
 <PageTitle>Menu — Kaye & DM BMS</PageTitle>
@@ -13,6 +14,11 @@
         <button class="btn btn-primary" @onclick="StartCreate">+ Add Item</button>
     </ActionContent>
 </PageHeader>
+
+@if (_error is not null)
+{
+    <div class="alert alert-danger">@_error</div>
+}
 
 @if (_items is null)
 {
@@ -104,6 +110,7 @@ else
     private bool _editing;
     private int _editingId;
     private EditModel _form = new();
+    private string? _error;
 
     protected override async Task OnInitializedAsync() => await LoadAsync();
 
@@ -127,24 +134,40 @@ else
 
     private async Task SaveAsync()
     {
-        var dto = new MenuItemUpsertDto(_form.Name, _form.Category, _form.Price, _form.SortOrder);
-        if (_editingId > 0)
+        _error = null;
+        try
         {
-            await MenuItemService.UpdateAsync(_editingId, dto);
-        }
-        else
-        {
-            await MenuItemService.CreateAsync(dto);
-        }
+            var dto = new MenuItemUpsertDto(_form.Name, _form.Category, _form.Price, _form.SortOrder);
+            if (_editingId > 0)
+            {
+                await MenuItemService.UpdateAsync(_editingId, dto);
+            }
+            else
+            {
+                await MenuItemService.CreateAsync(dto);
+            }
 
-        _editing = false;
-        await LoadAsync();
+            _editing = false;
+            await LoadAsync();
+        }
+        catch (DomainException ex)
+        {
+            _error = ex.Message;
+        }
     }
 
     private async Task ToggleActiveAsync(MenuItemDto item)
     {
-        await MenuItemService.SetActiveAsync(item.Id, !item.IsActive);
-        await LoadAsync();
+        _error = null;
+        try
+        {
+            await MenuItemService.SetActiveAsync(item.Id, !item.IsActive);
+            await LoadAsync();
+        }
+        catch (DomainException ex)
+        {
+            _error = ex.Message;
+        }
     }
 
     private static string FormatPeso(decimal amount) => string.Format("₱{0:N2}", amount);
