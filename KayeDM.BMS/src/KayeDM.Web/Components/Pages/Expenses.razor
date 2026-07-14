@@ -233,8 +233,16 @@ else
 
     private async Task DeleteAsync(int id)
     {
-        await ExpenseService.DeleteExpenseAsync(id);
-        await LoadExpensesAsync();
+        _error = null;
+        try
+        {
+            await ExpenseService.DeleteExpenseAsync(id);
+            await LoadExpensesAsync();
+        }
+        catch (DomainException ex)
+        {
+            _error = ex.Message;
+        }
     }
 
     private static string FormatPeso(decimal amount) => string.Format("₱{0:N2}", amount);
