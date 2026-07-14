@@ -123,4 +123,25 @@ public class ClosingLockTests : IDisposable
 
         await act.Should().ThrowAsync<DateClosedException>();
     }
+
+    [Fact]
+    public async Task DeleteExpenseAsync_Throws_WhenExpenseDateIsClosed()
+    {
+        var expense = new Expense
+        {
+            Date = _today,
+            ExpenseCategoryId = 1,
+            Description = "Rice",
+            Amount = 500m,
+            PaymentMethod = ExpensePaymentMethod.Cash,
+            LoggedById = "u1",
+            LoggedAt = DateTime.Now
+        };
+        _db.Expenses.Add(expense);
+        _db.SaveChanges();
+
+        var act = async () => await _expenseService.DeleteExpenseAsync(expense.Id);
+
+        await act.Should().ThrowAsync<DateClosedException>();
+    }
 }

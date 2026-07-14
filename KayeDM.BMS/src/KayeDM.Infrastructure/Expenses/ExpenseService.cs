@@ -157,6 +157,8 @@ public class ExpenseService : IExpenseService
         var entity = await db.Expenses.FirstOrDefaultAsync(e => e.Id == id)
             ?? throw new DomainException($"Expense {id} not found.");
 
+        await ClosingGuard.EnsureDateNotClosedAsync(db, entity.Date, "delete this expense");
+
         db.Expenses.Remove(entity);
         await db.SaveChangesAsync();
     }
