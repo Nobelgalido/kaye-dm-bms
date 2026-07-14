@@ -24,9 +24,7 @@ var builder = WebApplication.CreateBuilder(args);
 
 // Add services to the container.
 builder.Services.AddDbContextFactory<AppDbContext>(options =>
-    options.UseSqlServer(
-        builder.Configuration.GetConnectionString("KayeDmBms"),
-        sql => sql.EnableRetryOnFailure()));
+    options.UseSqlServer(builder.Configuration.GetConnectionString("KayeDmBms")));
 
 builder.Services.AddScoped<IMenuItemService, MenuItemService>();
 builder.Services.AddScoped<IOrderService, OrderService>();
