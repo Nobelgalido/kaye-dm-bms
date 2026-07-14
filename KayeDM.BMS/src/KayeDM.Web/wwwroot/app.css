@@ -407,8 +407,16 @@ h1:focus {
     border-bottom: none;
 }
 
+/* white-space: nowrap keeps multi-word headers ("Trays Produced",
+   "Servings/Tray") on one line so their right edge lines up exactly with
+   the right-aligned value below — a wrapped header's visual right edge
+   can drift from the column's true edge. (width: 1% was tried here too,
+   but combined with .report-table's min-width: max-content it triggers a
+   Chromium table-layout bug where percentage-width columns balloon to
+   thousands of pixels — do not reintroduce it.) */
 .report-table__money-head {
     text-align: right;
+    white-space: nowrap;
 }
 
 .report-table__money {
@@ -416,6 +424,7 @@ h1:focus {
     font-weight: 500;
     font-variant-numeric: tabular-nums;
     text-align: right;
+    white-space: nowrap;
 }
 
 .report-table__zero {
